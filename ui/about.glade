@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.38.2 -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <object class="GtkAboutDialog" id="about_dialog">
+    <property name="can-focus">False</property>
+    <property name="modal">True</property>
+    <property name="window-position">center-always</property>
+    <property name="type-hint">normal</property>
+    <property name="program-name">VersaGuard</property>
+    <property name="version">v1.0</property>
+    <property name="copyright" translatable="yes">Copyright © 2023 BeaCox, G-AOi, wytili, YiboChen03, ZYXDDDDDSG
+</property>
+    <property name="comments" translatable="yes">A lightweight kernel module-based packet filtering firewall.</property>
+    <property name="website">https://github.com/BeaCox/VersaGuard-Firewall</property>
+    <property name="website-label" translatable="yes">Visit Source</property>
+    <property name="authors">BeaCox, G-AOi, wytili, YiboChen03, ZYXDDDDDSG</property>
+    <property name="logo">../resources/versaguard-logo.png</property>
+    <property name="license-type">gpl-3-0-only</property>
+    <child internal-child="vbox">
+      <object class="GtkBox">
+        <property name="can-focus">False</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox">
+            <property name="can-focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
