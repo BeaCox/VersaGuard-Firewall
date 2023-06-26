@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.38.2 -->
+<interface>
+  <requires lib="gtk+" version="3.24"/>
+  <object class="GtkComboBoxText" id="language_combo">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="active-id">default</property>
+    <items>
+      <item id="default" translatable="yes">English</item>
+      <item translatable="yes">简体中文</item>
+    </items>
+  </object>
+</interface>

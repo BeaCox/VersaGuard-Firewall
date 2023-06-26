@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include "database.h"
 // 暗黑模式切换回调函数
 void on_dark_toggle_button_toggled(GtkToggleButton *toggle_button, gpointer data) {
     gboolean active = gtk_toggle_button_get_active(toggle_button);
@@ -52,7 +53,7 @@ void on_add_button_clicked(GtkButton *button, gpointer data) {
     GtkWidget *btn_yes = GTK_WIDGET(gtk_builder_get_object(builder, "btn_yes"));
     //显示add对话框
     gtk_dialog_run(GTK_DIALOG(edit_dialog));
-    // 点击button_ok后销毁对话框
+    // 点击button_ok后关闭对话框
     g_signal_connect(button_ok, "clicked", G_CALLBACK(gtk_widget_destroy), edit_dialog);
     // 点击btn_yes后销毁对话框和popover_cancel
     g_signal_connect(btn_yes, "clicked", G_CALLBACK(gtk_widget_destroy), edit_dialog);
@@ -139,6 +140,21 @@ int main(int argc, char *argv[]) {
     cr0                 = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "cr0"));
     cr1                 = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "cr1"));
     cr2                 = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "cr2"));
+
+    // Set the tree view's model
+    gtk_tree_view_set_model(treeview, GTK_TREE_MODEL(liststore));
+
+    // Set the tree view's columns
+    gtk_tree_view_column_add_attribute(c0, cr0, "text", 0);
+    gtk_tree_view_column_add_attribute(c1, cr1, "text", 1);
+    gtk_tree_view_column_add_attribute(c2, cr2, "text", 2);
+
+    
+    // 初始化数据库
+    initDatabase();
+
+    // 显示数据
+    showData(liststore);
 
     // 显示窗口
     gtk_widget_show_all(window);

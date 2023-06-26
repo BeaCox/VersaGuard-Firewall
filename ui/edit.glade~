@@ -25,7 +25,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkBox">
+          <object class="GtkBox" id="ynbox">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="spacing">8</property>
@@ -50,6 +50,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
+                <signal name="activate" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
                 <style>
                   <class name="destructive-action"/>
                 </style>
@@ -74,7 +75,8 @@
     <property name="can-focus">False</property>
     <property name="default-width">600</property>
     <property name="default-height">600</property>
-    <property name="type-hint">dialog</property>
+    <property name="type-hint">dock</property>
+    <property name="decorated">False</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="box_edit">
         <property name="can-focus">False</property>
@@ -90,6 +92,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
+                <signal name="activate" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>

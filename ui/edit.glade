@@ -50,6 +50,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
+                <signal name="activate" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
                 <style>
                   <class name="destructive-action"/>
                 </style>
@@ -91,6 +92,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
+                <signal name="activate" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
