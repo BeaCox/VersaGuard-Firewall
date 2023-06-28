@@ -6,6 +6,7 @@ int main(int argc, char *argv[])
 {
     GtkBuilder *builder;
     GtkWidget *window;
+    GtkWidget *headerBar;
     GtkListStore *liststore;
 
     gtk_init(&argc, &argv);
@@ -27,6 +28,18 @@ int main(int argc, char *argv[])
     // 初始化数据库
     initDatabase();
 
+    // 应用css文件
+    GtkCssProvider *cssProvider = gtk_css_provider_new();
+    gtk_css_provider_load_from_resource(cssProvider, "/css/main.css");
+    // GdkScreen *screen = gdk_screen_get_default();
+    // gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    GtkStyleContext *styleContext = gtk_widget_get_style_context(window);
+    gtk_style_context_add_provider(styleContext, GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	g_object_unref(cssProvider);
+    // 设置标题栏
+    headerBar = GTK_WIDGET(gtk_builder_get_object(builder, "headerbar"));
+    gtk_window_set_titlebar(GTK_WINDOW(window), headerBar);
+
     // 显示数据
     showData(liststore);
 
@@ -44,5 +57,6 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
 
 
