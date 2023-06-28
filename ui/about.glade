@@ -6,6 +6,7 @@
     <property name="can-focus">False</property>
     <property name="modal">True</property>
     <property name="window-position">center-always</property>
+    <property name="destroy-with-parent">True</property>
     <property name="type-hint">normal</property>
     <property name="program-name">VersaGuard</property>
     <property name="version">v1.0</property>

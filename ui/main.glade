@@ -10,7 +10,7 @@
   <object class="GtkImage" id="delete_image">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="icon-name">app-remove-symbolic</property>
+    <property name="icon-name">edittrash</property>
   </object>
   <object class="GtkImage" id="export_image">
     <property name="visible">True</property>
@@ -24,20 +24,39 @@
   </object>
   <object class="GtkListStore" id="liststore">
     <columns>
+      <!-- column-name id -->
+      <column type="gint"/>
       <!-- column-name protocol -->
       <column type="gchararray"/>
-      <!-- column-name source -->
+      <!-- column-name src_ip -->
       <column type="gchararray"/>
-      <!-- column-name destination -->
+      <!-- column-name dst_ip -->
+      <column type="gchararray"/>
+      <!-- column-name src_port -->
+      <column type="gint"/>
+      <!-- column-name dst_port -->
+      <column type="gint"/>
+      <!-- column-name start_time -->
+      <column type="gchararray"/>
+      <!-- column-name end_time -->
+      <column type="gchararray"/>
+      <!-- column-name action -->
+      <column type="gboolean"/>
+      <!-- column-name remarks -->
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkWindow" id="main_window">
-    <property name="width-request">800</property>
-    <property name="height-request">600</property>
+  <object class="GtkImage" id="select_all_image">
+    <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="title" translatable="yes">VersaGuard</property>
+    <property name="icon-name">emblem-ok-symbolic</property>
+  </object>
+  <object class="GtkWindow" id="main_window">
+    <property name="width-request">1200</property>
+    <property name="height-request">750</property>
+    <property name="can-focus">False</property>
     <property name="window-position">center</property>
+    <property name="icon-name">beryl-settings</property>
     <property name="decorated">False</property>
     <child>
       <!-- n-columns=1 n-rows=3 -->
@@ -101,7 +120,7 @@
             <property name="margin-top">20</property>
             <property name="margin-bottom">20</property>
             <child>
-              <!-- n-columns=4 n-rows=1 -->
+              <!-- n-columns=5 n-rows=1 -->
               <object class="GtkGrid" id="edit_grid">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
@@ -114,6 +133,7 @@
                     <property name="margin-end">10</property>
                     <property name="image">import_image</property>
                     <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_import_button_clicked" object="liststore" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left-attach">0</property>
@@ -146,6 +166,7 @@
                     <property name="margin-end">10</property>
                     <property name="image">export_image</property>
                     <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_export_button_clicked" object="treeview" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left-attach">2</property>
@@ -162,9 +183,25 @@
                     <property name="margin-end">10</property>
                     <property name="image">delete_image</property>
                     <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_delete_button_clicked" object="selection" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left-attach">3</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="select_all_button">
+                    <property name="label" translatable="yes"> Select All</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="image">select_all_image</property>
+                    <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_select_all_button_clicked" object="treeview" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left-attach">4</property>
                     <property name="top-attach">0</property>
                   </packing>
                 </child>
@@ -212,8 +249,10 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="margin-top">5</property>
+                <property name="hscroll-policy">natural</property>
+                <property name="vscroll-policy">natural</property>
                 <property name="model">liststore</property>
-                <property name="search-column">0</property>
+                <property name="search-column">10</property>
                 <property name="enable-grid-lines">both</property>
                 <child internal-child="selection">
                   <object class="GtkTreeSelection" id="selection">
@@ -222,33 +261,146 @@
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn" id="c0">
-                    <property name="fixed-width">100</property>
-                    <property name="title" translatable="yes">protocol</property>
+                    <property name="visible">False</property>
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">id</property>
                     <property name="clickable">True</property>
                     <property name="sort-column-id">0</property>
                     <child>
                       <object class="GtkCellRendererText" id="cr0"/>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
                     </child>
                   </object>
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn" id="c1">
-                    <property name="fixed-width">150</property>
-                    <property name="title" translatable="yes">source</property>
+                    <property name="resizable">True</property>
+                    <property name="min-width">100</property>
+                    <property name="title" translatable="yes">Protocol</property>
                     <property name="clickable">True</property>
                     <property name="sort-column-id">1</property>
                     <child>
-                      <object class="GtkCellRendererText" id="cr1"/>
+                      <object class="GtkCellRendererText" id="cr1">
+                        <property name="width">100</property>
+                      </object>
+                      <attributes>
+                        <attribute name="family">5</attribute>
+                        <attribute name="text">1</attribute>
+                      </attributes>
                     </child>
                   </object>
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn" id="c2">
-                    <property name="fixed-width">150</property>
-                    <property name="title" translatable="yes">destination</property>
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Source IP</property>
                     <property name="clickable">True</property>
+                    <property name="sort-column-id">2</property>
                     <child>
                       <object class="GtkCellRendererText" id="cr2"/>
+                      <attributes>
+                        <attribute name="text">2</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="c3">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Destination IP</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">3</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cr3"/>
+                      <attributes>
+                        <attribute name="text">3</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="c4">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Source Port</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">4</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cr4"/>
+                      <attributes>
+                        <attribute name="text">4</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="c5">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Destination Port</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">5</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cr5"/>
+                      <attributes>
+                        <attribute name="text">5</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="c6">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Start Time</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">6</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cr6"/>
+                      <attributes>
+                        <attribute name="text">6</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="c7">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">End Time</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">7</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cr7"/>
+                      <attributes>
+                        <attribute name="text">7</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="c8">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Block</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">8</property>
+                    <child>
+                      <object class="GtkCellRendererToggle" id="cr8"/>
+                      <attributes>
+                        <attribute name="active">8</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="c9">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Remarks</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">9</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cr9"/>
+                      <attributes>
+                        <attribute name="text">9</attribute>
+                      </attributes>
                     </child>
                   </object>
                 </child>
