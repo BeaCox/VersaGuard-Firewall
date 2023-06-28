@@ -1,6 +1,6 @@
 #include "database.h"
 #include "headerbar.h"
-
+#include "core_func.h"
 
 int main(int argc, char *argv[])
 {
@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     gtk_init(&argc, &argv);
 
     // 加载Glade布局文件
-    builder = gtk_builder_new_from_file("../ui/main.glade");
+    builder = gtk_builder_new_from_resource("/glade/main.glade");
 
     // 获取窗口
     window = GTK_WIDGET(gtk_builder_get_object(builder, "main_window"));

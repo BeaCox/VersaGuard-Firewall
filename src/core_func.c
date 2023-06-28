@@ -83,7 +83,7 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
 void on_add_button_clicked(GtkButton *button, gpointer data)
 {
     // 从glade文件中获取add对话框和popover_cancel
-    GtkBuilder *builder = gtk_builder_new_from_file("../ui/edit.glade");
+    GtkBuilder *builder = gtk_builder_new_from_resource("/glade/edit.glade");
     GtkWidget *edit_dialog = GTK_WIDGET(gtk_builder_get_object(builder, "edit_dialog"));
     // button_ok
     GtkWidget *button_ok = GTK_WIDGET(gtk_builder_get_object(builder, "button_ok"));

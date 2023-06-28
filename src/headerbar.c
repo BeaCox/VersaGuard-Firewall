@@ -27,14 +27,22 @@ void on_dark_toggle_button_toggled(GtkToggleButton *toggle_button, gpointer data
 void on_about_button_clicked(GtkButton *button, gpointer data)
 {
     // 从glade文件中获取about对话框
-    GtkBuilder *builder = gtk_builder_new_from_file("../ui/about.glade");
+    GtkBuilder *builder = gtk_builder_new_from_resource("/glade/about.glade");
     GtkWidget *about_dialog = GTK_WIDGET(gtk_builder_get_object(builder, "about_dialog"));
+    // 获取嵌入的图标文件路径
+    const gchar *icon_path = "/img/versaguard-logo.png";
+    // 创建图标
+    GdkPixbuf *logo_pixbuf = gdk_pixbuf_new_from_resource(icon_path, NULL);
+    // 设置图标为 About 对话框的 Logo
+    gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(about_dialog), logo_pixbuf);
     // 禁用主窗口
     gtk_widget_set_sensitive(GTK_WIDGET(data), FALSE);
     // 保持对话框在最上层
     gtk_window_set_keep_above(GTK_WINDOW(about_dialog), TRUE);
     // 显示about对话框
     gtk_dialog_run(GTK_DIALOG(about_dialog));
+    // 清理资源
+    g_object_unref(logo_pixbuf);
     // 点击按钮后销毁对话框
     gtk_widget_destroy(about_dialog);
     // 启用主窗口

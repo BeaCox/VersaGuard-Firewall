@@ -2,77 +2,9 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkPopover" id="popover_cancel">
-    <property name="can-focus">False</property>
-    <child>
-      <object class="GtkBox" id="box_confirm">
-        <property name="visible">True</property>
-        <property name="can-focus">False</property>
-        <property name="border-width">16</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">8</property>
-        <property name="homogeneous">True</property>
-        <child>
-          <object class="GtkLabel" id="label_confirm">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="label" translatable="yes">Are you sure you want to quit without saving?</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkBox" id="ynbox">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="spacing">8</property>
-            <property name="homogeneous">True</property>
-            <child>
-              <object class="GtkModelButton" id="btn_no">
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="text" translatable="yes">No</property>
-                <property name="centered">True</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="btn_yes">
-                <property name="label" translatable="yes">Yes</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <signal name="activate" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
-                <style>
-                  <class name="destructive-action"/>
-                </style>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
   <object class="GtkDialog" id="edit_dialog">
     <property name="can-focus">False</property>
+    <property name="hexpand">True</property>
     <property name="default-width">600</property>
     <property name="default-height">600</property>
     <property name="destroy-with-parent">True</property>
@@ -81,15 +13,21 @@
     <child internal-child="vbox">
       <object class="GtkBox" id="box_edit">
         <property name="can-focus">False</property>
+        <property name="margin-start">10</property>
+        <property name="margin-end">10</property>
+        <property name="margin-top">10</property>
+        <property name="margin-bottom">10</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="btn_options">
+            <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="layout-style">end</property>
+            <property name="hexpand">True</property>
+            <property name="layout-style">spread</property>
             <child>
-              <object class="GtkButton" id="button_ok">
-                <property name="label" translatable="yes">OK</property>
+              <object class="GtkButton" id="button_cancel">
+                <property name="label" translatable="yes">Cancel</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
@@ -102,24 +40,18 @@
               </packing>
             </child>
             <child>
-              <object class="GtkMenuButton" id="button_cancel">
+              <object class="GtkButton" id="button_ok">
+                <property name="label" translatable="yes">OK</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="focus-on-click">False</property>
                 <property name="receives-default">True</property>
-                <property name="popover">popover_cancel</property>
-                <child>
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">Cancel</property>
-                  </object>
-                </child>
+                <style>
+                  <class name="button_ok"/>
+                </style>
               </object>
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="pack-type">end</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -137,10 +69,7 @@
             <property name="can-focus">False</property>
             <property name="halign">center</property>
             <property name="valign">center</property>
-            <property name="margin-top">10</property>
-            <property name="margin-bottom">10</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">True</property>
+            <property name="orientation">vertical</property>
             <property name="row-spacing">10</property>
             <property name="column-spacing">10</property>
             <child>
@@ -303,7 +232,7 @@
           </object>
           <packing>
             <property name="expand">False</property>
-            <property name="fill">True</property>
+            <property name="fill">False</property>
             <property name="position">1</property>
           </packing>
         </child>
