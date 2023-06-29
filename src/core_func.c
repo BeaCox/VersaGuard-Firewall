@@ -245,28 +245,11 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
                 return;
             }
             // 从liststore中删除选中行
-            if (!gtk_list_store_remove(liststore, &iter))
-            {
-                // 提示用户删除失败
-                GtkWidget *error_dialog = gtk_message_dialog_new(NULL,
-                                                                 GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                                 GTK_MESSAGE_ERROR,
-                                                                 GTK_BUTTONS_CLOSE,
-                                                                 "Delete failed! Please check permissions!");
-                gtk_dialog_run(GTK_DIALOG(error_dialog));
-                gtk_widget_destroy(error_dialog);
-
-                // 释放内存
-                g_list_free(selectedRows);
-                gtk_widget_destroy(confirm_dialog);
-                return;
-            }
+            gtk_list_store_remove(liststore, &iter);
             // 释放内存
             row = g_list_next(row);
             gtk_tree_path_free(path);
         }
-        // 释放内存
-        g_list_free(row);
         // 更新数据库
         if(!showData(liststore)){
             // 提示用户更新数据库失败
@@ -295,8 +278,10 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
         gtk_widget_destroy(success_dialog);
         // 释放内存
         g_list_free(selectedRows);
-
+        return;
     }
+    // 如果用户选择了否，关闭对话框
+    gtk_widget_destroy(confirm_dialog);
 }
 
 
@@ -312,3 +297,7 @@ void on_select_all_button_clicked(GtkButton *button, gpointer data)
     // 选中所有行
     gtk_tree_selection_select_all(selection);
 }
+
+
+// 双击treeview中的行时，弹出编辑对话框
+
