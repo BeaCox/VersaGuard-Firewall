@@ -15,6 +15,7 @@
   <object class="GtkDialog" id="edit_dialog">
     <property name="can-focus">False</property>
     <property name="hexpand">True</property>
+    <property name="window-position">center</property>
     <property name="destroy-with-parent">True</property>
     <property name="type-hint">dialog</property>
     <child internal-child="vbox">
@@ -40,7 +41,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <signal name="activate" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
+                <signal name="clicked" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -88,8 +89,10 @@
               <object class="GtkLabel" id="label_protocol">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Protocol</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -103,8 +106,10 @@
               <object class="GtkLabel" id="label_srcip">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Source IP</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -118,8 +123,10 @@
               <object class="GtkLabel" id="label_dstip">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Destination IP</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -133,8 +140,10 @@
               <object class="GtkLabel" id="label_srcport">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Source Port</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -148,8 +157,10 @@
               <object class="GtkLabel" id="label_dstport">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Destination Port</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -163,8 +174,10 @@
               <object class="GtkLabel" id="label_stime">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Start Time</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -178,8 +191,10 @@
               <object class="GtkLabel" id="label_etime">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">End Time</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -193,8 +208,10 @@
               <object class="GtkLabel" id="label_block">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Block</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -208,8 +225,10 @@
               <object class="GtkLabel" id="label_protocol8">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Remarks</property>
                 <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
                   <attribute name="weight" value="bold"/>
                   <attribute name="scale" value="1.3999999999999999"/>
                 </attributes>
@@ -243,36 +262,13 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="labeletime">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label" translatable="yes">2020-01-01 00:00:00</property>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">6</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="label_stime1">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label" translatable="yes">2020-01-01 00:00:00</property>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">5</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSpinButton" id="spin_dstport">
+              <object class="GtkEntry" id="entry_dstport">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="placeholder-text" translatable="yes">0-65535</property>
+                <property name="editable">False</property>
+                <property name="secondary-icon-name">accessories-text-editor</property>
+                <property name="placeholder-text" translatable="yes">0-65535, blank is all</property>
                 <property name="input-purpose">number</property>
-                <property name="adjustment">adj_dstport</property>
-                <property name="numeric">True</property>
-                <property name="update-policy">if-valid</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -280,15 +276,13 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSpinButton" id="spin_srcport">
+              <object class="GtkEntry" id="entry_srcport">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="placeholder-text" translatable="yes">0-65535</property>
+                <property name="editable">False</property>
+                <property name="secondary-icon-name">accessories-text-editor</property>
+                <property name="placeholder-text" translatable="yes">0-65535, blank is all</property>
                 <property name="input-purpose">number</property>
-                <property name="adjustment">adj_srcport</property>
-                <property name="numeric">True</property>
-                <property name="update-policy">if-valid</property>
-                <property name="value">-1</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -296,13 +290,72 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkEntry" id="entry_dstip">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="editable">False</property>
+                <property name="secondary-icon-name">accessories-text-editor</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">2</property>
+              </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkEntry" id="entry_srcip">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="editable">False</property>
+                <property name="secondary-icon-name">accessories-text-editor</property>
+                <property name="primary-icon-activatable">False</property>
+                <property name="primary-icon-sensitive">False</property>
+                <signal name="icon-press" handler="on_ip_entry_icon_press" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">1</property>
+              </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkComboBoxText" id="combox_protocol">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="active">0</property>
+                <items>
+                  <item translatable="yes">ALL</item>
+                  <item translatable="yes">TCP</item>
+                  <item translatable="yes">UDP</item>
+                  <item translatable="yes">ICMP</item>
+                </items>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entry_stime">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="editable">False</property>
+                <property name="secondary-icon-name">calendar-month-symbolic</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entry_etime">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="editable">False</property>
+                <property name="secondary-icon-name">calendar-month-symbolic</property>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">6</property>
+              </packing>
             </child>
           </object>
           <packing>
