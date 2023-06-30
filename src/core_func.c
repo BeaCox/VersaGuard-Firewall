@@ -1,5 +1,14 @@
 #include "core_func.h"
 
+// 全局变量，用于跟踪选中行的计数
+gint selectedRowCount = 0;
+
+// 选择行发生变化时的回调函数
+void on_selection_changed(GtkTreeSelection *selection, gpointer user_data)
+{
+    // 更新选中行的计数
+    selectedRowCount = gtk_tree_selection_count_selected_rows(selection);
+}
 
 // 导入按钮回调函数
 void on_import_button_clicked(GtkButton *button, gpointer data)
@@ -81,39 +90,38 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
 // 如果ip输入框旁边的secondary icon被点击，弹窗提示用户输入正确的ip地址
 void on_ip_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
 {
-    GtkWidget *hint_dialog = gtk_message_dialog_new(NULL,
+    // 创建提示对话框(处于最顶层)
+    GtkWidget *hint_dialog = gtk_message_dialog_new(GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(entry))),
                                                     GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                    GTK_MESSAGE_ERROR,
+                                                    GTK_MESSAGE_INFO,
                                                     GTK_BUTTONS_CLOSE,
-                                                    "Please enter a valid IP address!");
+                                                    "Please enter a valid ip address!");
+    // 运行对话框并等待用户点击关闭按钮
     gtk_dialog_run(GTK_DIALOG(hint_dialog));
+    // 如果点击了关闭按钮，销毁对话框
     gtk_widget_destroy(hint_dialog);
 }
+
 // 添加按钮回调函数
 void on_add_button_clicked(GtkButton *button, gpointer data)
 {
-    // 从glade文件中获取add对话框和popover_cancel
+    // 从glade文件中获取edit对话框和popover_cancel
     GtkBuilder *builder = gtk_builder_new_from_resource("/glade/edit.glade");
     GtkWidget *edit_dialog = GTK_WIDGET(gtk_builder_get_object(builder, "edit_dialog"));
-    // button_ok
-    GtkWidget *button_ok = GTK_WIDGET(gtk_builder_get_object(builder, "button_ok"));
-    // button_cancel
-    GtkWidget *button_cancel = GTK_WIDGET(gtk_builder_get_object(builder, "button_cancel"));
-    // popover_cancel
-    GtkWidget *popover_cancel = GTK_WIDGET(gtk_builder_get_object(builder, "popover_cancel"));
-    // btn_no
-    GtkWidget *btn_no = GTK_WIDGET(gtk_builder_get_object(builder, "btn_no"));
-    // btn_yes
-    GtkWidget *btn_yes = GTK_WIDGET(gtk_builder_get_object(builder, "btn_yes"));
-    // 显示add对话框
-    gtk_dialog_run(GTK_DIALOG(edit_dialog));
-    // 点击button_ok后关闭对话框
-    g_signal_connect(button_ok, "clicked", G_CALLBACK(gtk_widget_destroy), edit_dialog);
-    // 点击btn_yes后销毁对话框和popover_cancel
-    g_signal_connect(btn_yes, "clicked", G_CALLBACK(gtk_widget_destroy), edit_dialog);
-
-    // 销毁edit_dialog
+    // 连接builder中的信号
+    gtk_builder_connect_signals(builder, NULL);
+    // 连接关闭信号处理函数
+    g_signal_connect(edit_dialog, "destroy", G_CALLBACK(gtk_widget_destroy), NULL);
+    // 运行对话框并等待用户选择
+    // 保持对话框在最上层
+    gtk_window_set_keep_above(GTK_WINDOW(edit_dialog), TRUE);
+    gint res = gtk_dialog_run(GTK_DIALOG(edit_dialog));
+    if(res == GTK_RESPONSE_OK){
+    
+    }
     gtk_widget_destroy(edit_dialog);
+    // 释放资源
+    g_object_unref(builder);
 }
 
 
@@ -123,7 +131,7 @@ void on_export_button_clicked(GtkButton *button, gpointer data)
     //获取selection
     GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(data));
     // 如果没有选中任何行，给出相应的提示
-    if (gtk_tree_selection_count_selected_rows(GTK_TREE_SELECTION(selection)) == 0)
+    if (selectedRowCount == 0)
     {
         GtkWidget *hint_dialog = gtk_message_dialog_new(NULL,
                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -197,7 +205,7 @@ void on_export_button_clicked(GtkButton *button, gpointer data)
 void on_delete_button_clicked(GtkButton *button, gpointer data)
 {
     // 如果没有选中任何行，给出相应的提示
-    if (gtk_tree_selection_count_selected_rows(GTK_TREE_SELECTION(data)) == 0)
+    if (selectedRowCount == 0)
     {
         GtkWidget *hint_dialog = gtk_message_dialog_new(NULL,
                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -302,6 +310,19 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
     gtk_widget_destroy(confirm_dialog);
 }
 
+// 将Delete按键映射为delete_button的回调函数
+gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    if (event->keyval == GDK_KEY_Delete)
+    {
+        on_delete_button_clicked(NULL, data);  // 调用你的删除按钮点击事件处理函数
+        return TRUE;  // 表示事件已处理
+    }
+
+    return FALSE;  // 表示事件未处理
+}
+
+
 
 
 // 全选按钮回调函数
@@ -319,4 +340,5 @@ void on_select_all_button_clicked(GtkButton *button, gpointer data)
 
 
 // 双击treeview中的行时，弹出编辑对话框
+
 

@@ -2,22 +2,15 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <object class="GtkAdjustment" id="adj_dstport">
-    <property name="upper">65535</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adj_srcport">
-    <property name="upper">65535</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
   <object class="GtkDialog" id="edit_dialog">
+    <property name="width-request">800</property>
+    <property name="height-request">700</property>
     <property name="can-focus">False</property>
     <property name="hexpand">True</property>
+    <property name="modal">True</property>
     <property name="window-position">center</property>
     <property name="destroy-with-parent">True</property>
-    <property name="type-hint">dialog</property>
+    <property name="type-hint">normal</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="box_edit">
         <property name="can-focus">False</property>
@@ -41,7 +34,9 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <signal name="clicked" handler="gtk_widget_destroy" object="edit_dialog" swapped="no"/>
+                <style>
+                  <class name="destructive-action"/>
+                </style>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -57,7 +52,7 @@
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
                 <style>
-                  <class name="button_ok"/>
+                  <class name="suggested-action"/>
                 </style>
               </object>
               <packing>
@@ -253,6 +248,7 @@
               <object class="GtkCheckButton" id="ckbt_block">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
+                <property name="focus-on-click">False</property>
                 <property name="receives-default">False</property>
                 <property name="draw-indicator">True</property>
               </object>
@@ -266,7 +262,8 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="editable">False</property>
-                <property name="secondary-icon-name">accessories-text-editor</property>
+                <property name="secondary-icon-name">text-editor-symbolic</property>
+                <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
                 <property name="placeholder-text" translatable="yes">0-65535, blank is all</property>
                 <property name="input-purpose">number</property>
               </object>
@@ -280,7 +277,8 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="editable">False</property>
-                <property name="secondary-icon-name">accessories-text-editor</property>
+                <property name="secondary-icon-name">text-editor-symbolic</property>
+                <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
                 <property name="placeholder-text" translatable="yes">0-65535, blank is all</property>
                 <property name="input-purpose">number</property>
               </object>
@@ -294,26 +292,12 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="editable">False</property>
-                <property name="secondary-icon-name">accessories-text-editor</property>
+                <property name="secondary-icon-name">text-editor-symbolic</property>
+                <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
                 <property name="top-attach">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="entry_srcip">
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="editable">False</property>
-                <property name="secondary-icon-name">accessories-text-editor</property>
-                <property name="primary-icon-activatable">False</property>
-                <property name="primary-icon-sensitive">False</property>
-                <signal name="icon-press" handler="on_ip_entry_icon_press" swapped="no"/>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">1</property>
               </packing>
             </child>
             <child>
@@ -339,6 +323,7 @@
                 <property name="can-focus">True</property>
                 <property name="editable">False</property>
                 <property name="secondary-icon-name">calendar-month-symbolic</property>
+                <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -351,10 +336,25 @@
                 <property name="can-focus">True</property>
                 <property name="editable">False</property>
                 <property name="secondary-icon-name">calendar-month-symbolic</property>
+                <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>
                 <property name="top-attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entry_srcip">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="editable">False</property>
+                <property name="secondary-icon-name">text-editor-symbolic</property>
+                <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
+                <signal name="icon-press" handler="on_ip_entry_icon_press" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">1</property>
               </packing>
             </child>
           </object>
@@ -366,5 +366,9 @@
         </child>
       </object>
     </child>
+    <action-widgets>
+      <action-widget response="-6">button_cancel</action-widget>
+      <action-widget response="-5">button_ok</action-widget>
+    </action-widgets>
   </object>
 </interface>
