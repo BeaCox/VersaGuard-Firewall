@@ -228,25 +228,14 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
         GtkTreeSelection *selection = gtk_tree_view_get_selection(treeview);
         // 获取选中的行
         GList *selectedRows = gtk_tree_selection_get_selected_rows(selection, NULL);
-        GList *row = selectedRows;
+        GList *lastRow = g_list_last(selectedRows);
 
-        // 存储要删除的行索引
-        GArray *rowsToDelete = g_array_new(FALSE, FALSE, sizeof(gint));
-
-        // 遍历选中的行，记录要删除的行索引
-        while (row)
+            // 逆序遍历选中的行，以防删除后影响后续行的位置
+        while (lastRow != NULL)
         {
-            GtkTreePath *path = (GtkTreePath *)(row->data);
-            g_array_append_val(rowsToDelete, gtk_tree_path_get_indices(path)[0]);
-            row = g_list_next(row);
-        }
-
-        // 逆序遍历要删除的行索引，以防删除后影响后续行的位置
-        for (gint i = rowsToDelete->len - 1; i >= 0; i--)
-        {
-            gint index = g_array_index(rowsToDelete, gint, i);
+            GtkTreePath *path = (GtkTreePath *)(lastRow->data);
             GtkTreeIter iter;
-            if (gtk_tree_model_iter_nth_child(GTK_TREE_MODEL(liststore), &iter, NULL, index))
+            if (gtk_tree_model_get_iter(GTK_TREE_MODEL(liststore), &iter, path))
             {
                 // 获取选中行的id
                 gint id;
@@ -256,7 +245,6 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
                 // 删除数据库中的记录
                 if (!deleteData(id))
                 {
-                    gtk_widget_destroy(confirm_dialog);
                     // 提示用户删除数据库失败
                     GtkWidget *error_dialog = gtk_message_dialog_new(NULL,
                                                                     GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -267,12 +255,16 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
                     gtk_widget_destroy(error_dialog);
                     // 释放内存
                     g_list_free(selectedRows);
-                    g_array_free(rowsToDelete, TRUE);
+                    gtk_widget_destroy(confirm_dialog);
                     return;
                 }
             }
+            // 移动到上一个节点
+            lastRow = g_list_previous(lastRow);
         }
-        g_array_free(rowsToDelete, TRUE);
+        int count = g_list_length(selectedRows);
+        // 释放内存
+        g_list_free(selectedRows);
 
         // 更新数据库
         if (!showData(liststore))
@@ -299,12 +291,10 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
                                                            GTK_MESSAGE_INFO,
                                                            GTK_BUTTONS_CLOSE,
                                                            "Delete successful! %d records deleted!",
-                                                           g_list_length(selectedRows));
+                                                           count);
         gtk_dialog_run(GTK_DIALOG(success_dialog));
         // 如果点击了关闭按钮，销毁对话框
         gtk_widget_destroy(success_dialog);
-        // 释放内存
-        g_list_free(selectedRows);
         return;
     }
 
