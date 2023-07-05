@@ -88,6 +88,7 @@
                     <property name="model">liststore</property>
                     <property name="search-column">10</property>
                     <property name="enable-grid-lines">both</property>
+                    <signal name="row-activated" handler="on_treeview_row_activated" object="liststore" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="selection">
                         <property name="mode">multiple</property>

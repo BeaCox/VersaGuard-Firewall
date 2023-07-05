@@ -185,6 +185,26 @@ int deleteData(int id){
     return TRUE;
 }
 
+gboolean updateData(int id, const char *protocol, const char *src_ip, const char *dst_ip, int src_port, int dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
+{
+    char *errorMsg = 0;
+    char updateQuery[256];
+    int actionValue = action ? 1 : 0;
+
+    snprintf(updateQuery, sizeof(updateQuery), "UPDATE rules SET protocol = '%s', src_ip = '%s', dst_ip = '%s', src_port = %d, dst_port = %d, start_time = '%s', end_time = '%s', action = %d, remarks = '%s' WHERE id = %d;",
+             protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks, id);
+
+    int rc = sqlite3_exec(db, updateQuery, 0, 0, &errorMsg);
+    if (rc != SQLITE_OK)
+    {
+        g_warning("更新数据错误: %s", errorMsg);
+        sqlite3_free(errorMsg);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 gboolean showData(GtkListStore *liststore)
 {
     sqlite3_stmt *stmt;
