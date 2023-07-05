@@ -9,8 +9,19 @@ void on_selection_changed(GtkTreeSelection *selection, gpointer user_data);
 // 导入功能
 void on_import_button_clicked(GtkButton *button, gpointer data);
 // 添加功能
-void on_ip_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data);
 void on_add_button_clicked(GtkButton *button, gpointer data);
+void on_ip_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data);
+gboolean on_key_press_event_ip(GtkWidget *widget, GdkEventKey *event, gpointer data);
+void on_ip_ok_clicked(GtkButton *button, gpointer data);
+void on_ip_clear_clicked(GtkButton *button, gpointer data);
+void on_port_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data);
+gboolean on_key_press_event_port(GtkWidget *widget, GdkEventKey *event, gpointer data);
+void on_port_ok_clicked(GtkButton *button, gpointer data);
+void on_port_clear_clicked(GtkButton *button, gpointer data);
+void on_time_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data);
+gboolean on_key_press_event_time(GtkWidget *widget, GdkEventKey *event, gpointer data);
+void on_time_ok_clicked(GtkButton *button, gpointer data);
+void on_time_clear_clicked(GtkButton *button, gpointer data);
 // 导出功能
 void on_export_button_clicked(GtkButton *button, gpointer data);
 // 删除功能
@@ -18,6 +29,8 @@ void on_delete_button_clicked(GtkButton *button, gpointer data);
 gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data);
 // 全选功能
 void on_select_all_button_clicked(GtkButton *button, gpointer data);
+// 检查冲突功能
+GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime);
 
 #endif // CORE_FUNC_H
 

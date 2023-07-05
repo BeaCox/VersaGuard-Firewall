@@ -1,15 +1,5 @@
 #include "core_func.h"
 
-// 全局变量，用于跟踪选中行的计数
-gint selectedRowCount = 0;
-
-// 选择行发生变化时的回调函数
-void on_selection_changed(GtkTreeSelection *selection, gpointer user_data)
-{
-    // 更新选中行的计数
-    selectedRowCount = gtk_tree_selection_count_selected_rows(selection);
-}
-
 // 导入按钮回调函数
 void on_import_button_clicked(GtkButton *button, gpointer data)
 {
@@ -48,7 +38,8 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
                 gtk_dialog_run(GTK_DIALOG(error_dialog));
                 gtk_widget_destroy(error_dialog);
             }
-            else{
+            else
+            {
                 // 关闭对话框
                 gtk_widget_destroy(dialog);
                 // 提示用户导入成功，并显示导入记录数量
@@ -87,25 +78,10 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
     gtk_widget_destroy(dialog);
 }
 
-// 如果ip输入框旁边的secondary icon被点击，弹窗提示用户输入正确的ip地址
-void on_ip_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
-{
-    // 创建提示对话框(处于最顶层)
-    GtkWidget *hint_dialog = gtk_message_dialog_new(GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(entry))),
-                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                    GTK_MESSAGE_INFO,
-                                                    GTK_BUTTONS_CLOSE,
-                                                    "Please enter a valid ip address!");
-    // 运行对话框并等待用户点击关闭按钮
-    gtk_dialog_run(GTK_DIALOG(hint_dialog));
-    // 如果点击了关闭按钮，销毁对话框
-    gtk_widget_destroy(hint_dialog);
-}
-
 // 添加按钮回调函数
 void on_add_button_clicked(GtkButton *button, gpointer data)
 {
-    // 从glade文件中获取edit对话框和popover_cancel
+    // 从glade文件中获取edit对话框
     GtkBuilder *builder = gtk_builder_new_from_resource("/glade/edit.glade");
     GtkWidget *edit_dialog = GTK_WIDGET(gtk_builder_get_object(builder, "edit_dialog"));
     // 连接builder中的信号
@@ -116,22 +92,492 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
     // 保持对话框在最上层
     gtk_window_set_keep_above(GTK_WINDOW(edit_dialog), TRUE);
     gint res = gtk_dialog_run(GTK_DIALOG(edit_dialog));
-    if(res == GTK_RESPONSE_OK){
-    
+
+    if (res == GTK_RESPONSE_OK)
+    {
+        GtkListStore *liststore = GTK_LIST_STORE(data);
+        // 如果点击OK，将所有修改的内容作为新的一行（如果没有和已有规则冲突）写入database和ListStore并刷新TreeView
+        // 获取entry中的内容
+        // protocol的内容从comboboxtext中获取
+        gchar *protocol = (gchar *)gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "combox_protocol")));
+        gchar *srcip = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcip")));
+        gchar *dstip = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_dstip")));
+        gchar *srcport = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcport")));
+        gchar *dstport = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_dstport")));
+        gchar *stime = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_stime")));
+        gchar *etime = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_etime")));
+        // block的内容从checkbutton中获取
+        gboolean block = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "ckbt_block")));
+        gchar *remarks = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_remarks")));
+
+        // 检查是否有冲突
+        GtkTreePath *conflict_path = checkConflict(liststore, protocol, srcip, dstip, srcport, dstport, stime, etime);
+        if (conflict_path != NULL)
+        {
+            // 如果有冲突，提示用户
+            GtkWidget *conflict_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),
+                                                                GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                GTK_MESSAGE_ERROR,
+                                                                GTK_BUTTONS_CLOSE,
+                                                                "Conflict with existing rules!");
+            gtk_dialog_run(GTK_DIALOG(conflict_dialog));
+            gtk_widget_destroy(conflict_dialog);
+            // // 选中冲突的行
+            // GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(gtk_builder_get_object(builder, "treeview")));
+            // gtk_tree_selection_select_path(selection, conflict_path);
+            // // 滚动到冲突的行
+            // GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(gtk_builder_get_object(builder, "treeview")));
+            // GtkTreeIter iter;
+            // gtk_tree_model_get_iter(model, &iter, conflict_path);
+            // gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(gtk_builder_get_object(builder, "treeview")), conflict_path, NULL, FALSE, 0, 0);
+            // // 释放资源
+            gtk_tree_path_free(conflict_path);
+        }
+        else
+        {
+            // 如果没有冲突，将新的一行写入database和ListStore并刷新TreeView
+            // 将新的一行写入database(先将srcport和dstport转换为整数)
+            gint srcport_int = atoi(srcport);
+            gint dstport_int = atoi(dstport);
+            insertData(protocol, srcip, dstip, srcport_int, dstport_int, stime, etime, block, remarks);
+            // 将新的一行写入ListStore
+            GtkTreeIter iter;
+            gtk_list_store_append(liststore, &iter);
+            gtk_list_store_set(liststore, &iter,
+                               1, protocol,
+                               2, srcip,
+                               3, dstip,
+                               4, srcport,
+                               5, dstport,
+                               6, stime,
+                               7, etime,
+                               8, block,
+                               9, remarks,
+                               -1);
+            // 刷新TreeView
+            showData(liststore);
+            // 释放资源（除了protocol都可能为空）
+            g_free(protocol);
+            if(strlen(srcip))
+                g_free(srcip);
+            if(strlen(dstip))
+                g_free(dstip);
+            if(strlen(srcport))
+                g_free(srcport);
+            if(strlen(dstport))
+                g_free(dstport);
+            if(strlen(stime))
+                g_free(stime);
+            if(strlen(etime))
+                g_free(etime);
+            if(strlen(remarks))
+                g_free(remarks);
+
+
+            // 提示用户添加成功
+            GtkWidget *success_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),
+                                                               GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                               GTK_MESSAGE_INFO,
+                                                               GTK_BUTTONS_CLOSE,
+                                                               "Add successful!");
+            gtk_dialog_run(GTK_DIALOG(success_dialog));
+            gtk_widget_destroy(success_dialog);
+            // // 滚动到新添加的行（最后一行）
+            // GtkTreePath *path = gtk_tree_path_new_from_indices(gtk_tree_model_iter_n_children(GTK_TREE_MODEL(liststore), NULL) - 1, -1);
+            // GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(gtk_builder_get_object(builder, "treeview")));
+            // gtk_tree_selection_select_path(selection, path);
+            // gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW(gtk_builder_get_object(builder, "treeview")), path, NULL, FALSE, 0, 0);
+            // // 释放资源
+            // gtk_tree_path_free(path);
+        }
     }
+
     gtk_widget_destroy(edit_dialog);
     // 释放资源
     g_object_unref(builder);
 }
 
+// 如果entry_srcip或者entry_dstip的secondary icon被点击，弹出ip_popover
+void on_ip_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *ip_popover = GTK_POPOVER(data);
+
+    // 通过ip_popover子对象获取对应的ip_box对象
+    GtkBox *ip_box = GTK_BOX(gtk_bin_get_child(GTK_BIN(ip_popover)));
+
+    // 获取ip_box的子对象列表
+    GList *children = gtk_container_get_children(GTK_CONTAINER(ip_box));
+
+    // 获取ip_box的第一个子对象ip
+    GtkWidget *first_child = GTK_WIDGET(g_list_nth_data(children, 0));
+
+    // 获取ip的子对象列表(4个spinbutton对象)
+    children = gtk_container_get_children(GTK_CONTAINER(first_child));
+
+    // 获取spinbutton对象
+    GtkWidget *spin1 = GTK_WIDGET(g_list_nth_data(children, 0));
+    GtkWidget *spin2 = GTK_WIDGET(g_list_nth_data(children, 2));
+    GtkWidget *spin3 = GTK_WIDGET(g_list_nth_data(children, 4));
+    GtkWidget *spin4 = GTK_WIDGET(g_list_nth_data(children, 6));
+
+    // 释放资源
+    g_list_free(children);
+
+    // 将entry对象附加到popover对象的数据
+    g_object_set_data(G_OBJECT(ip_popover), "entry", entry);
+
+    // 将spinbutton对象附加到popover对象的数据
+    g_object_set_data(G_OBJECT(ip_popover), "spin1", spin1);
+    g_object_set_data(G_OBJECT(ip_popover), "spin2", spin2);
+    g_object_set_data(G_OBJECT(ip_popover), "spin3", spin3);
+    g_object_set_data(G_OBJECT(ip_popover), "spin4", spin4);
+
+    // 如果entry中有内容，将内容写入ip_popover中的spinbutton
+    gchar *ip = (gchar *)gtk_entry_get_text(entry);
+    if (strlen(ip))
+    {
+        // 将ip字符串分割为4个字符串
+        gchar **ip_split = g_strsplit(ip, ".", 4);
+        // 将4个字符串转换为4个整数
+        gint ip1 = atoi(ip_split[0]);
+        gint ip2 = atoi(ip_split[1]);
+        gint ip3 = atoi(ip_split[2]);
+        gint ip4 = atoi(ip_split[3]);
+        // 将4个整数写入4个spinbutton
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin1), ip1);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin2), ip2);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin3), ip3);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin4), ip4);
+        // 释放资源
+        g_strfreev(ip_split);
+    }
+
+    // 设置ip_popover的位置
+    gtk_popover_set_relative_to(GTK_POPOVER(ip_popover), GTK_WIDGET(entry));
+
+    // 显示ip_popover
+    gtk_popover_popup(ip_popover);
+}
+
+// 将Enter映射到on_ip_entry_icon_press，将Delete映射到on_ip_clear_clicked
+gboolean on_key_press_event_ip(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    // 如果按下的是Enter键，将其映射到on_ip_entry_icon_press
+    if (event->keyval == GDK_KEY_Return)
+    {
+        on_ip_entry_icon_press(GTK_ENTRY(widget), GTK_ENTRY_ICON_SECONDARY, NULL, data);
+    }
+    // 如果按下的是Delete键，将其映射到on_ip_clear_clicked
+    else if (event->keyval == GDK_KEY_Delete)
+    {
+        on_ip_clear_clicked(NULL, data);
+    }
+    return FALSE;
+}
+
+// 如果ip_popover的OK按钮被点击，将edit_dialog中对应的entry中的内容替换为用户输入的ip
+void on_ip_ok_clicked(GtkButton *button, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *ip_popover = GTK_POPOVER(data);
+
+    // 获取对应的entry对象
+    GtkEntry *entry = GTK_ENTRY(g_object_get_data(G_OBJECT(ip_popover), "entry"));
+
+    // 获取对应的spinbutton对象
+    GtkSpinButton *ip1 = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(ip_popover), "spin1"));
+    GtkSpinButton *ip2 = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(ip_popover), "spin2"));
+    GtkSpinButton *ip3 = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(ip_popover), "spin3"));
+    GtkSpinButton *ip4 = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(ip_popover), "spin4"));
+
+    // 获取用户输入的ip
+    gchar *ip = g_strdup_printf("%d.%d.%d.%d",
+                                gtk_spin_button_get_value_as_int(ip1),
+                                gtk_spin_button_get_value_as_int(ip2),
+                                gtk_spin_button_get_value_as_int(ip3),
+                                gtk_spin_button_get_value_as_int(ip4));
+
+    // 将ip写入entry
+    gtk_entry_set_text(entry, ip);
+    // 释放资源
+    g_free(ip);
+
+    gtk_popover_popdown(ip_popover);
+}
+
+void on_ip_clear_clicked(GtkButton *button, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *ip_popover = GTK_POPOVER(data);
+
+    // 获取对应的entry对象
+    GtkEntry *entry = GTK_ENTRY(g_object_get_data(G_OBJECT(ip_popover), "entry"));
+
+    // 清空entry中的内容
+    gtk_entry_set_text(entry, "");
+
+    // 隐藏ip_popover
+    gtk_popover_popdown(ip_popover);
+}
+
+// 如果entry_srcport或者entry_dstport的secondary icon被点击，弹出port_popover
+void on_port_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *port_popover = GTK_POPOVER(data);
+
+    // 通过port_popover子对象获取对应的port_box对象
+    GtkBox *port_box = GTK_BOX(gtk_bin_get_child(GTK_BIN(port_popover)));
+
+    // 获取port_box的子对象列表
+    GList *children = gtk_container_get_children(GTK_CONTAINER(port_box));
+
+    // 获取port_box的第一个子对象port
+    GtkWidget *port = GTK_WIDGET(g_list_nth_data(children, 0));
+
+    // 释放资源
+    g_list_free(children);
+
+    // 将entry对象附加到popover对象的数据
+    g_object_set_data(G_OBJECT(port_popover), "entry", entry);
+
+    // 将prot(spinbutton)对象附加到popover对象的数据
+    g_object_set_data(G_OBJECT(port_popover), "port", port);
+
+    // 如果entry中有内容，将内容写入port_popover中的spinbutton
+    gchar *port_str = (gchar *)gtk_entry_get_text(entry);
+    if (strlen(port_str))
+    {
+        // 将port字符串转换为整数
+        gint port_int = atoi(port_str);
+        // 将整数写入spinbutton
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(port), port_int);
+    }
+
+    // 设置port_popover的位置
+    gtk_popover_set_relative_to(GTK_POPOVER(port_popover), GTK_WIDGET(entry));
+
+    // 显示port_popover
+    gtk_popover_popup(port_popover);
+}
+
+// 将Enter映射到on_port_entry_icon_press，将Delete映射到on_port_clear_clicked
+gboolean on_key_press_event_port(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    // 如果按下的是Enter键，将其映射到on_port_entry_icon_press
+    if (event->keyval == GDK_KEY_Return)
+    {
+        on_port_entry_icon_press(GTK_ENTRY(widget), GTK_ENTRY_ICON_SECONDARY, NULL, data);
+    }
+    // 如果按下的是Delete键，将其映射到on_port_clear_clicked
+    else if (event->keyval == GDK_KEY_Delete)
+    {
+        on_port_clear_clicked(NULL, data);
+    }
+    return FALSE;
+}
+
+// 如果port_popover的OK按钮被点击，将edit_dialog中对应的entry中的内容替换为用户输入的port
+void on_port_ok_clicked(GtkButton *button, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *port_popover = GTK_POPOVER(data);
+
+    // 获取对应的entry对象
+    GtkEntry *entry = GTK_ENTRY(g_object_get_data(G_OBJECT(port_popover), "entry"));
+
+    // 获取对应的spinbutton对象
+    GtkSpinButton *port = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(port_popover), "port"));
+
+    // 获取用户输入的port
+    gchar *port_str = g_strdup_printf("%d", gtk_spin_button_get_value_as_int(port));
+
+    // 将port写入entry
+    gtk_entry_set_text(entry, port_str);
+    // 释放资源
+    g_free(port_str);
+
+    gtk_popover_popdown(port_popover);
+}
+
+// 如果port_popover的Clear按钮被点击，清空entry中的内容
+void on_port_clear_clicked(GtkButton *button, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *port_popover = GTK_POPOVER(data);
+
+    // 获取对应的entry对象
+    GtkEntry *entry = GTK_ENTRY(g_object_get_data(G_OBJECT(port_popover), "entry"));
+
+    // 清空entry中的内容
+    gtk_entry_set_text(entry, "");
+
+    // 隐藏port_popover
+    gtk_popover_popdown(port_popover);
+}
+
+// 如果entry_stime或者entry_etime的secondary icon被点击，弹出time_popover
+void on_time_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *time_popover = GTK_POPOVER(data);
+
+    // 通过time_popover子对象获取对应的time_box对象
+    GtkBox *time_box = GTK_BOX(gtk_bin_get_child(GTK_BIN(time_popover)));
+
+    // 获取time_box的子对象列表
+    GList *children = gtk_container_get_children(GTK_CONTAINER(time_box));
+
+    // 获取time_box的第一个子对象time
+    GtkWidget *time = GTK_WIDGET(g_list_nth_data(children, 0));
+
+    // 释放资源
+    g_list_free(children);
+
+    // 获取time的第1个子对象date（GtkCalendar）
+    GtkWidget *date = GTK_WIDGET(g_list_nth_data(gtk_container_get_children(GTK_CONTAINER(time)), 0));
+
+    // 获取time的第2，4，6个子对象hour，minute，second（GtkSpinButton）
+    GtkWidget *hour = GTK_WIDGET(g_list_nth_data(gtk_container_get_children(GTK_CONTAINER(time)), 1));
+    GtkWidget *minute = GTK_WIDGET(g_list_nth_data(gtk_container_get_children(GTK_CONTAINER(time)), 3));
+    GtkWidget *second = GTK_WIDGET(g_list_nth_data(gtk_container_get_children(GTK_CONTAINER(time)), 5));
+
+    // 获取date的年月日
+    gint year, month, day;
+    gtk_calendar_get_date(GTK_CALENDAR(date), &year, &month, &day);
+
+    // 获取hour，minute，second的值
+    gint hour_int = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(hour));
+    gint minute_int = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(minute));
+    gint second_int = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(second));
+
+    // 将entry对象附加到popover对象的数据
+    g_object_set_data(G_OBJECT(time_popover), "entry", entry);
+
+    // 将所有time附加到popover对象的数据
+    g_object_set_data(G_OBJECT(time_popover), "date", date);
+    g_object_set_data(G_OBJECT(time_popover), "hour", hour);
+    g_object_set_data(G_OBJECT(time_popover), "minute", minute);
+    g_object_set_data(G_OBJECT(time_popover), "second", second);
+
+    // 如果entry中有内容，将内容写入time_popover中的Calendar和SpinButton
+    gchar *time_str = (gchar *)gtk_entry_get_text(entry);
+    if (strlen(time_str))
+    {
+        // 将time字符串先分割为日期和时间
+        gchar **time_split = g_strsplit(time_str, " ", 2);
+        // 将日期字符串分割为年月日
+        gchar **date_split = g_strsplit(time_split[0], "-", 3);
+        // 将时间字符串分割为时分秒
+        gchar **time_split2 = g_strsplit(time_split[1], ":", 3);
+        // 将年月日字符串转换为整数
+        gint year_int = atoi(date_split[0]);
+        gint month_int = atoi(date_split[1]);
+        gint day_int = atoi(date_split[2]);
+        // 将时分秒字符串转换为整数
+        gint hour_int = atoi(time_split2[0]);
+        gint minute_int = atoi(time_split2[1]);
+        gint second_int = atoi(time_split2[2]);
+        // 将整数写入Calendar和SpinButton
+        gtk_calendar_select_month(GTK_CALENDAR(date), month_int - 1, year_int);
+        gtk_calendar_select_day(GTK_CALENDAR(date), day_int);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(hour), hour_int);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(minute), minute_int);
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(second), second_int);
+        // 释放资源
+        g_strfreev(time_split);
+        g_strfreev(date_split);
+        g_strfreev(time_split2);
+    }
+
+    // 设置time_popover的位置
+    gtk_popover_set_relative_to(GTK_POPOVER(time_popover), GTK_WIDGET(entry));
+
+    // 显示time_popover
+    gtk_popover_popup(time_popover);
+}
+
+// 将Enter映射到on_time_entry_icon_press，将Delete映射到on_time_clear_clicked
+gboolean on_key_press_event_time(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    // 如果按下的是Enter键，将其映射到on_time_entry_icon_press
+    if (event->keyval == GDK_KEY_Return)
+    {
+        on_time_entry_icon_press(GTK_ENTRY(widget), GTK_ENTRY_ICON_SECONDARY, NULL, data);
+    }
+    // 如果按下的是Delete键，将其映射到on_time_clear_clicked
+    else if (event->keyval == GDK_KEY_Delete)
+    {
+        on_time_clear_clicked(NULL, data);
+    }
+    return FALSE;
+}
+
+// 如果time_popover的OK按钮被点击，将edit_dialog中对应的entry中的内容替换为用户输入的time
+void on_time_ok_clicked(GtkButton *button, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *time_popover = GTK_POPOVER(data);
+
+    // 获取对应的entry对象
+    GtkEntry *entry = GTK_ENTRY(g_object_get_data(G_OBJECT(time_popover), "entry"));
+
+    // 获取对应的Calendar对象
+    GtkCalendar *date = GTK_CALENDAR(g_object_get_data(G_OBJECT(time_popover), "date"));
+
+    // 获取date的年月日
+    gint year, month, day;
+    gtk_calendar_get_date(GTK_CALENDAR(date), &year, &month, &day);
+
+    // 获取对应的SpinButton对象
+    GtkSpinButton *hour = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(time_popover), "hour"));
+    GtkSpinButton *minute = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(time_popover), "minute"));
+    GtkSpinButton *second = GTK_SPIN_BUTTON(g_object_get_data(G_OBJECT(time_popover), "second"));
+
+    // 获取hour，minute，second的值
+    gint hour_int = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(hour));
+    gint minute_int = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(minute));
+    gint second_int = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(second));
+
+    // 获取用户输入的time
+    gchar *time_str = g_strdup_printf("%d-%02d-%02d %02d:%02d:%02d",
+                                      year,
+                                      month + 1,
+                                      day,
+                                      hour_int,
+                                      minute_int,
+                                      second_int);
+
+    // 将time写入entry
+    gtk_entry_set_text(entry, time_str);
+    // 释放资源
+    g_free(time_str);
+
+    gtk_popover_popdown(time_popover);
+}
+
+// 如果time_popover的Clear按钮被点击，清空entry中的内容
+void on_time_clear_clicked(GtkButton *button, gpointer data)
+{
+    // 从data参数获取对应的popover对象
+    GtkPopover *time_popover = GTK_POPOVER(data);
+
+    // 获取对应的entry对象
+    GtkEntry *entry = GTK_ENTRY(g_object_get_data(G_OBJECT(time_popover), "entry"));
+
+    // 清空entry中的内容
+    gtk_entry_set_text(entry, "");
+
+    // 隐藏time_popover
+    gtk_popover_popdown(time_popover);
+}
 
 // 导出按钮回调函数, data为treeview
 void on_export_button_clicked(GtkButton *button, gpointer data)
 {
-    //获取selection
-    GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(data));
     // 如果没有选中任何行，给出相应的提示
-    if (selectedRowCount == 0)
+    if (gtk_tree_selection_count_selected_rows(GTK_TREE_SELECTION(gtk_tree_view_get_selection(data))) == 0)
     {
         GtkWidget *hint_dialog = gtk_message_dialog_new(NULL,
                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -201,11 +647,10 @@ void on_export_button_clicked(GtkButton *button, gpointer data)
     gtk_widget_destroy(dialog);
 }
 
-
 void on_delete_button_clicked(GtkButton *button, gpointer data)
 {
     // 如果没有选中任何行，给出相应的提示
-    if (selectedRowCount == 0)
+    if (gtk_tree_selection_count_selected_rows(GTK_TREE_SELECTION(data)) == 0)
     {
         GtkWidget *hint_dialog = gtk_message_dialog_new(NULL,
                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -238,7 +683,7 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
         GList *selectedRows = gtk_tree_selection_get_selected_rows(selection, NULL);
         GList *lastRow = g_list_last(selectedRows);
 
-            // 逆序遍历选中的行，以防删除后影响后续行的位置
+        // 逆序遍历选中的行，以防删除后影响后续行的位置
         while (lastRow != NULL)
         {
             GtkTreePath *path = (GtkTreePath *)(lastRow->data);
@@ -255,10 +700,10 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
                 {
                     // 提示用户删除数据库失败
                     GtkWidget *error_dialog = gtk_message_dialog_new(NULL,
-                                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                                    GTK_MESSAGE_ERROR,
-                                                                    GTK_BUTTONS_CLOSE,
-                                                                    "Delete database failed! Please check permissions!");
+                                                                     GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                                     GTK_MESSAGE_ERROR,
+                                                                     GTK_BUTTONS_CLOSE,
+                                                                     "Delete database failed! Please check permissions!");
                     gtk_dialog_run(GTK_DIALOG(error_dialog));
                     gtk_widget_destroy(error_dialog);
                     // 释放内存
@@ -315,15 +760,12 @@ gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data
 {
     if (event->keyval == GDK_KEY_Delete)
     {
-        on_delete_button_clicked(NULL, data);  // 调用你的删除按钮点击事件处理函数
-        return TRUE;  // 表示事件已处理
+        on_delete_button_clicked(NULL, data); // 调用你的删除按钮点击事件处理函数
+        return TRUE;                          // 表示事件已处理
     }
 
-    return FALSE;  // 表示事件未处理
+    return FALSE; // 表示事件未处理
 }
-
-
-
 
 // 全选按钮回调函数
 void on_select_all_button_clicked(GtkButton *button, gpointer data)
@@ -338,7 +780,84 @@ void on_select_all_button_clicked(GtkButton *button, gpointer data)
     gtk_tree_selection_select_all(selection);
 }
 
+// 检查规则是否冲突，如果冲突，返回具体冲突规则的path，否则返回NULL
+GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime) {
+    GtkTreeIter iter;
+    gboolean valid;
+
+    // 遍历ListStore中的每一行
+    valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(liststore), &iter);
+
+    // 如果ListStore为空，直接返回NULL
+    if (!valid)
+        return NULL;
+
+    // 存储每一行的数据
+    gchar *storedProtocol, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime;
+
+
+    while (valid) {
+        // 获取当前行的数据
+        g_print("valid\n");
+
+        gtk_tree_model_get(GTK_TREE_MODEL(liststore), &iter,
+                           1, &storedProtocol,
+                           2, &storedSrcIP,
+                           3, &storedDstIP,
+                           4, &storedSrcPort,
+                           5, &storedDstPort,
+                           6, &storedSTime,
+                           7, &storedETime,
+                           -1);
+
+        // 进行冲突检查
+        if (g_strcmp0(storedProtocol, protocol) == 0 &&
+            g_strcmp0(storedSrcIP, srcip) == 0 &&
+            g_strcmp0(storedDstIP, dstip) == 0 &&
+            g_strcmp0(storedSrcPort, srcport) == 0 &&
+            g_strcmp0(storedDstPort, dstport) == 0 &&
+            g_strcmp0(storedSTime, stime) == 0 &&
+            g_strcmp0(storedETime, etime) == 0) {
+            // 规则冲突，返回冲突的行的路径
+            // 释放资源
+            g_free(storedProtocol);
+            if(strlen(storedSrcIP))
+                g_free(storedSrcIP);
+            if(strlen(storedDstIP))
+                g_free(storedDstIP);
+            if(strlen(storedSrcPort))
+                g_free(storedSrcPort);
+            if(strlen(storedDstPort))
+                g_free(storedDstPort);
+            if(strlen(storedSTime)) 
+                g_free(storedSTime);
+            if(strlen(storedETime))
+                g_free(storedETime);
+            return gtk_tree_model_get_path(GTK_TREE_MODEL(liststore), &iter);
+        }
+
+        // 获取下一行
+        valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(liststore), &iter);
+    }
+
+    // 释放资源
+    g_free(storedProtocol);
+    if(strlen(storedSrcIP))
+        g_free(storedSrcIP);
+    if(strlen(storedDstIP))
+        g_free(storedDstIP);
+    if(strlen(storedSrcPort))
+        g_free(storedSrcPort);
+    if(strlen(storedDstPort))
+        g_free(storedDstPort);
+    if(strlen(storedSTime)) 
+        g_free(storedSTime);
+    if(strlen(storedETime))
+        g_free(storedETime);
+
+    return NULL;
+}
+
 
 // 双击treeview中的行时，弹出编辑对话框
-
 

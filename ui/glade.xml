@@ -4,6 +4,5 @@
     <file preprocess="xml-stripblanks">main.glade</file>
     <file preprocess="xml-stripblanks">about.glade</file>
     <file preprocess="xml-stripblanks">edit.glade</file>
-    <file preprocess="xml-stripblanks">time.glade</file>
   </gresource>
 </gresources>

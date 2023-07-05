@@ -77,7 +77,9 @@ int importData(const char *filename)
         gboolean action = sqlite3_column_int(stmt, 8) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 9);
 
-        insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks);
+        if(!insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks)){
+            count--;
+        }
     }
 
     sqlite3_finalize(stmt);
@@ -210,14 +212,30 @@ gboolean showData(GtkListStore *liststore)
         gboolean action = sqlite3_column_int(stmt, 8) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 9);
 
+        // src_port和dst_port转换为char*后再插入liststore
+        gchar *src_port_str = g_strdup_printf("%d", src_port);
+        gchar *dst_port_str = g_strdup_printf("%d", dst_port);
+
         GtkTreeIter iter;
         gtk_list_store_append(liststore, &iter);
-        gtk_list_store_set(liststore, &iter, 0, id, 1, protocol, 2, src_ip, 3, dst_ip, 4, src_port, 5, dst_port, 6, start_time, 7, end_time, 8, action, 9, remarks, -1);
+        gtk_list_store_set(liststore, &iter,
+                           0, id,
+                           1, protocol,
+                           2, src_ip,
+                           3, dst_ip,
+                           4, src_port_str,
+                           5, dst_port_str,
+                           6, start_time,
+                           7, end_time,
+                           8, action,
+                           9, remarks,
+                           -1);
     }
 
     sqlite3_finalize(stmt);
 
     return TRUE;
 }
+
 
 

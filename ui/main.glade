@@ -33,9 +33,9 @@
       <!-- column-name dst_ip -->
       <column type="gchararray"/>
       <!-- column-name src_port -->
-      <column type="gint"/>
+      <column type="gchararray"/>
       <!-- column-name dst_port -->
-      <column type="gint"/>
+      <column type="gchararray"/>
       <!-- column-name start_time -->
       <column type="gchararray"/>
       <!-- column-name end_time -->
@@ -61,6 +61,7 @@
       <object class="GtkStack" id="menu_stack">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
+        <property name="transition-type">crossfade</property>
         <child>
           <!-- n-columns=1 n-rows=2 -->
           <object class="GtkGrid" id="rules_grid">
@@ -90,7 +91,6 @@
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="selection">
                         <property name="mode">multiple</property>
-                        <signal name="changed" handler="on_selection_changed" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -120,7 +120,6 @@
                             <property name="width">100</property>
                           </object>
                           <attributes>
-                            <attribute name="family">5</attribute>
                             <attribute name="text">1</attribute>
                           </attributes>
                         </child>
@@ -185,6 +184,7 @@
                     <child>
                       <object class="GtkTreeViewColumn" id="c6">
                         <property name="resizable">True</property>
+                        <property name="min-width">150</property>
                         <property name="title" translatable="yes">Start Time</property>
                         <property name="clickable">True</property>
                         <property name="sort-column-id">6</property>
@@ -199,6 +199,7 @@
                     <child>
                       <object class="GtkTreeViewColumn" id="c7">
                         <property name="resizable">True</property>
+                        <property name="min-width">150</property>
                         <property name="title" translatable="yes">End Time</property>
                         <property name="clickable">True</property>
                         <property name="sort-column-id">7</property>
@@ -284,7 +285,7 @@
                         <property name="margin-end">10</property>
                         <property name="image">add_image</property>
                         <property name="always-show-image">True</property>
-                        <signal name="clicked" handler="on_add_button_clicked" swapped="no"/>
+                        <signal name="clicked" handler="on_add_button_clicked" object="liststore" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
