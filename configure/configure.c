@@ -1,15 +1,17 @@
+#define _POSIX_C_SOURCE 200809L  // 定义POSIX C为2008年的标准版
+#define _GNU_SOURCE  // 启用GNU扩展特性
+#define DEVICE_FILE "/dev/firewall"  // 设备文件路径
+
 #include <sqlite3.h>
 #include <regex.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <time.h>
 #include "configure.h"
-
-#define DEVICE_FILE "/dev/firewall"  // 设备文件路径
 
 
 int main(int argc, char *argv[])
@@ -23,7 +25,7 @@ int main(int argc, char *argv[])
         sqlite3 *db;
         int result = sqlite3_open("rules.db", &db);
         if (result != SQLITE_OK) {
-            fprintf(stderr, "无法打开规则数据库: %s\n", sqlite3_errmsg(db));
+            fprintf(stderr, "\033[1;31m无法打开规则数据库: %s\033[0m\n", sqlite3_errmsg(db));
             return result;
             }
 
@@ -43,7 +45,7 @@ int main(int argc, char *argv[])
 
 
         if (result != SQLITE_OK) {// 处理创建表失败的情况
-            fprintf(stderr, "创建表失败: %s\n", error_message);
+            fprintf(stderr, "\033[1;31m创建表失败: %s\033[0m\n", error_message);
             sqlite3_free(error_message);
             return result;
         }
@@ -56,7 +58,7 @@ int main(int argc, char *argv[])
     sqlite3 *db;
     int result = sqlite3_open("rules.db", &db);
     if (result != SQLITE_OK) {
-        fprintf(stderr, "无法打开规则数据库: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "\033[1;31m无法打开规则数据库: %s\033[0m\n", sqlite3_errmsg(db));
         return result;
     }
 
@@ -68,12 +70,12 @@ int main(int argc, char *argv[])
      { // 交互模式
         printf("\n");
 
-        printf("██╗   ██╗███████╗██████╗ ███████╗ █████╗  ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗ \n");
-        printf("██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗\n");
-        printf("██║   ██║█████╗  ██████╔╝███████╗███████║██║  ███╗██║   ██║███████║██████╔╝██║  ██║\n");
-        printf("╚██╗ ██╔╝██╔══╝  ██╔══██╗╚════██║██╔══██║██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║\n");
-        printf(" ╚████╔╝ ███████╗██║  ██║███████║██║  ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝\n");
-        printf("  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ \n");
+        printf("\033[1;32m██╗   ██╗███████╗██████╗ ███████╗ █████╗  ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗ \033[0m\n");
+        printf("\033[1;32m██║   ██║██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝ ██║   ██║██╔══██╗██╔══██╗██╔══██╗\033[0m\n");
+        printf("\033[1;32m██║   ██║█████╗  ██████╔╝███████╗███████║██║  ███╗██║   ██║███████║██████╔╝██║  ██║\033[0m\n");
+        printf("\033[1;32m╚██╗ ██╔╝██╔══╝  ██╔══██╗╚════██║██╔══██║██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║\033[0m\n");
+        printf(" \033[1;32m╚████╔╝ ███████╗██║  ██║███████║██║  ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝\033[0m\n");
+        printf("  \033[1;32m╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ \033[0m\n");
 
         printf("\n");
         printf("欢迎使用VersaGuard.\n");
@@ -114,19 +116,19 @@ int main(int argc, char *argv[])
 // 命令行参数模式使用说明
 void printCmdUsage()
     {
-        printf("使用说明:\"./configure -o [option]\"\n");
+        printf("使用说明:\"\033[1;36m./configure -o [option] <parameters>\033[0m\"\n");
         printf("\n");
         printf("[option]: add,del,upd,imp,exp,rule,write\n");
-        printf("add:添加规则,后接九个参数,分别表示协议类型(tcp,udp,icmp,all),源IP,目标IP,源端口,目标端口,开始时间(格式为带引号的\"YYYY-MM-DD HH:MM:SS\"),结束时间,执行动作(0拦截,1通过),备注\n");
-        printf("del:删除规则,后接一个参数表示要删除的规则的序号\n");
-        printf("upd:修改规则,后接三个参数,分别表示要修改的规则的序号,要修改哪一项参数(ptc,sip,dip,spt,dpt,stm,etm,act,rmk),修改后的结果\n");
-        printf("imp:导入规则,后接一个参数表示要导入的规则文件路径\n");
-        printf("exp:导出规则,后接一个参数表示要导出的规则文件名\n"); 
-        printf("rule:打印规则\n");
-        printf("write:写规则到设备文件\n");
-        printf("help:打印使用说明\n");
+        printf("add：添加规则，后接九个参数，分别表示协议类型(tcp/udp/icmp/all)，源IP，目标IP，源端口，目标端口，开始时间(格式为\033[1;93m带引号\033[0m的\"YYYY-MM-DD HH:MM:SS\")，结束时间，执行动作(0拦截/1通过)，备注\n");
+        printf("del：删除规则，后接一个参数表示要删除的规则的序号\n");
+        printf("upd：修改规则，后接三个参数，分别表示要修改的规则的序号，要修改哪一项参数(ptc/sip/dip/spt/dpt/stm/etm/act/rmk)，修改后的结果\n");
+        printf("imp：导入规则，后接一个参数表示要导入的规则文件路径\n");
+        printf("exp：导出规则，后接一个参数表示要导出的规则文件名\n"); 
+        printf("rule：打印规则\n");
+        printf("write：写规则到设备文件\n");
+        printf("help：打印使用说明\n");
         printf("\n");
-        printf("也可以输入./configure以交互模式运行程序\n");
+        printf("也可以输入\033[1;36m./configure\033[0m以交互模式运行程序\n");
     }
         
 // 命令行参数模式
@@ -135,7 +137,7 @@ void parseParam(int argc, char* argv[], sqlite3 *db)
     //参数无效，打印使用说明
     if (argc < 3) 
     {
-        printf("无效的参数数量。\n");
+        printf("\033[1;31m无效的参数数量。\033[0m\n");
         printCmdUsage();
         exit(1);
     }
@@ -149,16 +151,21 @@ void parseParam(int argc, char* argv[], sqlite3 *db)
         if (strcmp(option, "add") == 0 && argc == 12) {
             Rule rule = parseRuleParam(argv + 3);
             if (addRule(db, &rule)) {
-        	printf("规则添加成功！\n");
+        	    printf("\033[1;32m规则添加成功！\033[0m\n");
     		} else {
-        	printf("规则添加失败。\n");
+        	    printf("\033[1;31m规则添加失败。\033[0m\n");
     		}
         } else if (strcmp(option, "del") == 0 && argc == 4) {
             int ruleId = atoi(argv[3]);
-            if(deleteRule(db, ruleId)){
-            printf("规则删除成功！\n");
+            Rule rule = findRuleById(db, ruleId);
+            if(isRuleEmpty(&rule)){
+                printf("\033[1;31m规则不存在。\033[0m\n");
+                exit(1);
+            }
+            else if(deleteRule(db, ruleId)){
+                printf("\033[1;32m规则删除成功！\033[0m\n");
     		} else {
-        	printf("规则删除失败。\n");
+        	    printf("\033[1;31m规则删除失败。\033[0m\n");
             }
         } else if (strcmp(option, "upd") == 0 && argc == 6) {
             int ruleId = atoi(argv[3]);
@@ -166,56 +173,66 @@ void parseParam(int argc, char* argv[], sqlite3 *db)
             char* value = argv[5];
             Rule ruleToUpdate = findRuleById(db, ruleId);
 
-            if (strcmp(field, "ptc") == 0) {
+            if(isRuleEmpty(&ruleToUpdate)){
+                printf("\033[1;31m规则不存在。\033[0m\n");
+                exit(1);
+            } else if (strcmp(field, "ptc") == 0) {
                 if(isValidProtocol(value)){
                     strcpy(ruleToUpdate.protocol, value);
-                } else {printf("输入的协议无效。"); exit(0);}
+                } else {printf("\033[1;31m输入的协议无效。\033[0m"); exit(0);}
             }
             else if (strcmp(field, "sip") == 0) {
                 if(isValidIPAddress(value)){
                     strcpy(ruleToUpdate.src_ip, value);
-                } else {printf("输入的源ip无效。"); exit(0);}
+                } else {printf("\033[1;31m输入的源ip无效。\033[0m"); exit(0);}
             }
             else if (strcmp(field, "dip") == 0) {
                 if(isValidIPAddress(value)){
                     strcpy(ruleToUpdate.dst_ip, value);
-                } else {printf("输入的目标ip无效。"); exit(0);}
+                } else {printf("\033[1;31m输入的目标ip无效。\033[0m"); exit(0);}
             }
             else if (strcmp(field, "spt") == 0) {
                 if(isValidPort(atoi(value))){
                     ruleToUpdate.src_port = atoi(value);
-                } else {printf("输入的源端口无效。"); exit(0);}
+                } else {printf("\033[1;31m输入的源端口无效。\033[0m"); exit(0);}
             }
             else if (strcmp(field, "dpt") == 0) {
                  if(isValidPort(atoi(value))){
                     ruleToUpdate.dst_port = atoi(value);
-                } else {printf("输入的目标端口无效。"); exit(0);}
+                } else {printf("\033[1;31m输入的目标端口无效。\033[0m"); exit(0);}
             }
             else if (strcmp(field, "stm") == 0) {
-                 if(isValidDateTime(value)){
-                    strcpy(ruleToUpdate.start_time, value);
-                } else {printf("输入的开始时间无效。"); exit(0);}
+                 if(!isValidDateTime(value)){
+                    printf("\033[1;31m输入的开始时间无效。\033[0m"); exit(0);
+                } else if(!isEndLaterThanStart(value, ruleToUpdate.end_time)){
+                    printf("\033[1;31m时间无效，输入的开始时间不早于原定的结束时间。\033[0m"); exit(0);
+                } else {strcpy(ruleToUpdate.start_time, value);}
             }
             else if (strcmp(field, "etm") == 0) {
-                if(isValidDateTime(value)){
-                    strcpy(ruleToUpdate.end_time, value);
-                } else {printf("输入的结束时间无效。"); exit(0);}
+                 if(!isValidDateTime(value)){
+                    printf("\033[1;31m输入的结束时间无效。\033[0m"); exit(0);
+                } else if(!isEndLaterThanStart(ruleToUpdate.start_time, value)){
+                    printf("\033[1;31m时间无效，输入的结束时间不晚于原定的开始时间。\033[0m"); exit(0);
+                } else {strcpy(ruleToUpdate.start_time, value);}
             }
             else if (strcmp(field, "act") == 0) {
-                ruleToUpdate.action = atoi(value);
+                if(atoi(value) == 0 || atoi(value) == 1){
+                    ruleToUpdate.action = atoi(value);
+                } else {printf("\033[1;31m输入的动作无效。\033[0m"); exit(0);}
+                
             }
             else if (strcmp(field, "rmk") == 0) {
                 strcpy(ruleToUpdate.remarks, value);
             }
             else {
-                printf("无效的规则字段\n"); 
-                exit(0);
+                printf("\033[1;31m无效的规则字段\033[0m\n"); 
+                exit(1);
             }
 
             if(updateRule(db, ruleId, &ruleToUpdate)){
-                printf("规则更新成功！\n");
+                printf("\033[1;32m规则更新成功！\033[0m\n");
     		} else {
-        	    printf("规则更新失败。\n");
+        	    printf("\033[1;31m规则更新失败。\033[0m\n");
             }
         } else if (strcmp(option, "imp") == 0 && argc == 4) {
             const char* filePath = argv[3];
@@ -230,7 +247,7 @@ void parseParam(int argc, char* argv[], sqlite3 *db)
         } else if (strcmp(option, "help") == 0 && argc == 3) {
             printCmdUsage();
         } else {
-            printf("无效的操作选项或参数数量\n");
+            printf("\033[1;31m无效的操作选项或参数数量\033[0m\n");
             printf("\n");
             printCmdUsage();
             printf("\n");
@@ -273,9 +290,9 @@ void interaction(int op, sqlite3 *db)
             rule = getRuleFromUserInput();
 
     		if (addRule(db, &rule)) {
-        	printf("规则添加成功！\n");
+        	printf("\033[1;32m规则添加成功！\033[0m\n");
     		} else {
-        	printf("规则添加失败。\n");
+        	printf("\033[1;31m规则添加失败。\033[0m\n");
     		}
 
             break;
@@ -283,11 +300,13 @@ void interaction(int op, sqlite3 *db)
         case 2:// 删除规则
             printf("请输入要删除的规则ID:");
 			scanf("%d", &ruleId);
-
-			if (deleteRule(db, ruleId)) {
-        	printf("规则删除成功！\n");
+            Rule rule = findRuleById(db, ruleId);
+            if(isRuleEmpty(&rule)){
+                printf("\033[1;31m规则不存在。\033[0m\n");
+            } else if (deleteRule(db, ruleId)) {
+        	printf("\033[1;32m规则删除成功！\033[0m\n");
     		} else {
-        	printf("规则删除失败。\n");
+        	printf("\033[1;31m规则删除失败。\033[0m\n");
     		}
 			 
             break;
@@ -295,7 +314,11 @@ void interaction(int op, sqlite3 *db)
         case 3:// 更新规则
             printf("请输入要更新的规则ID:");
 			scanf("%d", &ruleId);
-
+            rule = findRuleById(db, ruleId);
+            if(isRuleEmpty(&rule)){
+                printf("\033[1;31m规则不存在。\033[0m\n");
+                break;
+            }
             char * field = malloc(100);
             printf("请输入要修改的参数：");
             scanf("%s", field);
@@ -303,59 +326,66 @@ void interaction(int op, sqlite3 *db)
             char * value = malloc(100);
             printf("将%s修改为:", field);
             getchar();
-            scanf("%s", value);
+            scanf(" %[^\n]", value);
 
             Rule ruleToUpdate = findRuleById(db, ruleId);
             if (strcmp(field, "ptc") == 0) {
                 if(isValidProtocol(value)){
                     strcpy(ruleToUpdate.protocol, value);
-                } else {printf("输入的协议无效。");return ;}
+                } else {printf("\033[1;31m输入的协议无效。\033[0m");return ;}
             }
             else if (strcmp(field, "sip") == 0) {
                 if(isValidIPAddress(value)){
                     strcpy(ruleToUpdate.src_ip, value);
-                } else {printf("输入的源ip无效。");return ;}
+                } else {printf("\033[1;31m输入的源ip无效。\033[0m");return ;}
             }
             else if (strcmp(field, "dip") == 0) {
                 if(isValidIPAddress(value)){
                     strcpy(ruleToUpdate.dst_ip, value);
-                } else {printf("输入的目标ip无效。");return ;}
+                } else {printf("\033[1;31m输入的目标ip无效。\033[0m");return ;}
             }
             else if (strcmp(field, "spt") == 0) {
                 if(isValidPort(atoi(value))){
                     ruleToUpdate.src_port = atoi(value);
-                } else {printf("输入的源端口无效。");return ;}
+                } else {printf("\033[1;31m输入的源端口无效。\033[0m");return ;}
             }
             else if (strcmp(field, "dpt") == 0) {
                  if(isValidPort(atoi(value))){
                     ruleToUpdate.dst_port = atoi(value);
-                } else {printf("输入的目标端口无效。");return ;}
+                } else {printf("\033[1;31m输入的目标端口无效。\033[0m");return ;}
             }
             else if (strcmp(field, "stm") == 0) {
-                 if(isValidDateTime(value)){
-                    strcpy(ruleToUpdate.start_time, value);
-                } else {printf("输入的开始时间无效。");return ;}
+                 if(!isValidDateTime(value)){
+                    printf("\033[1;31m输入的开始时间无效。\033[0m"); return ;
+                } else if(!isEndLaterThanStart(value, ruleToUpdate.end_time)){
+                    printf("\033[1;31m时间无效，输入的开始时间不早于原定的结束时间。\033[0m"); return ;
+                } else {strcpy(ruleToUpdate.start_time, value);}
             }
             else if (strcmp(field, "etm") == 0) {
-                if(isValidDateTime(value)){
-                    strcpy(ruleToUpdate.end_time, value);
-                } else {printf("输入的结束时间无效。");return ;}
+                 if(!isValidDateTime(value)){
+                    printf("\033[1;31m输入的结束时间无效。\033[0m"); return ;
+                } else if(!isEndLaterThanStart(ruleToUpdate.start_time, value)){
+                    printf("\033[1;31m时间无效，输入的结束时间不晚于原定的开始时间。\033[0m"); return ;
+                } else {strcpy(ruleToUpdate.start_time, value);}
             }
             else if (strcmp(field, "act") == 0) {
-                ruleToUpdate.action = atoi(value);
+                if(atoi(value) == 0 || atoi(value) == 1){
+                    ruleToUpdate.action = atoi(value);
+                } else {printf("\033[1;31m输入的动作无效。\033[0m"); return ;}
+                
             }
             else if (strcmp(field, "rmk") == 0) {
                 strcpy(ruleToUpdate.remarks, value);
             }
             else {
-                printf("无效的规则字段\n");
+                printf("\033[1;31m无效的规则字段\033[0m\n");
                 return ;
             }
 
     		if (updateRule(db, ruleId, &ruleToUpdate)) {
-        	    printf("规则更新成功！\n");
+        	    printf("\033[1;32m规则更新成功！\033[0m\n");
     		} else {
-        	    printf("规则更新失败。\n");
+        	    printf("\033[1;31m规则更新失败。\033[0m\n");
     		}
             free(field);
             free(value);
@@ -375,21 +405,18 @@ void interaction(int op, sqlite3 *db)
 			scanf("%s", filename);
 
 			exportRules(filename, db);
-
 			break;
 		
 		case 6:// 打印规则
 			printRules(db);
-
 			break;
 
 		case 7:// 写规则到设备文件
 			if (writeRulesToDevice(db)) {
-                printf("规则写入设备文件成功。\n");
+                printf("\033[1;32m规则写入设备文件成功。\033[0m\n");
             } else {
-                printf("规则写入设备文件失败。\n");
+                printf("\033[1;31m规则写入设备文件失败。\033[0m\n");
             }
-
 			break;
 
         case 8:// 打印使用说明
@@ -397,10 +424,12 @@ void interaction(int op, sqlite3 *db)
             break;
 
         default:
-            printf("无效参数。\n");
+            printf("\033[1;31m无效参数。\033[0m\n");
             break;
     }
 }
+
+
 
 
 
@@ -447,50 +476,12 @@ bool updateRule(sqlite3 *db, int ruleId, const Rule *rule)
 }
 
 
-// 打印规则
-void printRules(sqlite3* db) 
-{
-    const char* sql;
-    sql = "SELECT * FROM rules";
-    
-    sqlite3_stmt* statement;
-    
-    if (sqlite3_prepare_v2(db, sql, -1, &statement, NULL) != SQLITE_OK) {
-        printf("查询规则失败。\n");
-        return;
-    }
-
-    printf("规则列表:\n");
-    printf("ID\tProtocol\tSrc IP\t\tDst IP\t\tSrc Port\tDst Port \tStart Time\t\tEnd Time\t\tAction\tRemarks\n");
-
-    while (sqlite3_step(statement) == SQLITE_ROW) {
-        int id = sqlite3_column_int(statement, 0);
-        const char* protocol = (const char*)sqlite3_column_text(statement, 1);
-        const char* src_ip = (const char*)sqlite3_column_text(statement, 2);
-        const char* dst_ip = (const char*)sqlite3_column_text(statement, 3);
-        int src_port = sqlite3_column_int(statement, 4);
-        int dst_port = sqlite3_column_int(statement, 5);
-        const char* start_time = (const char*)sqlite3_column_text(statement, 6);
-        const char* end_time = (const char*)sqlite3_column_text(statement, 7);
-        int action = sqlite3_column_int(statement, 8);
-        const char* remarks = (const char*)sqlite3_column_text(statement, 9);
-        
-        printf("%-3d\t%-8s\t%-15s\t%-15s\t%-8d\t%-8d\t%-16s\t%-16s\t%-6d\t%s\n", id, protocol, src_ip, dst_ip, 
-               src_port, dst_port, start_time, end_time, action, remarks);
-               
-    }
-    
-    sqlite3_finalize(statement);
-}
-
-
-
 // 从文件导入规则
 void importRules(const char *filename, sqlite3 *db) 
 {
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
-        printf("找不到或无法打开文件 %s\n", filename);
+        printf("\033[1;31m找不到或无法打开文件 %s\033[0m\n", filename);
         return;
     }
 
@@ -528,9 +519,9 @@ void importRules(const char *filename, sqlite3 *db)
 		// 将规则对象添加到规则表中
         bool add = addRule(db, rule);
         if (add) {
-            printf("规则已添加到数据库。\n");
+            printf("\033[1;32m规则已添加到数据库。\033[0m\n");
         } else {
-            printf("无法添加规则到数据。\n");
+            printf("\033[1;31m无法添加规则到数据。\033[0m\n");
         }
 
         free(rule->protocol);
@@ -550,7 +541,7 @@ void exportRules(const char *filename, sqlite3 *db)
 {
     FILE* file = fopen(filename, "w");
     if (file == NULL) {
-        printf("找不到或无法打开文件 %s\n", filename);
+        printf("\033[1;31m找不到或无法打开文件 %s\033[0m\n", filename);
         return;
     }
 
@@ -558,7 +549,7 @@ void exportRules(const char *filename, sqlite3 *db)
     sqlite3_stmt* stmt;
     int result = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if (result != SQLITE_OK) {
-        printf("无法准备 SQL 语句：%s\n", sqlite3_errmsg(db));
+        printf("\033[1;31m无法准备 SQL 语句：%s\033[0m\n", sqlite3_errmsg(db));
         fclose(file);
         return;
     }
@@ -593,7 +584,43 @@ void exportRules(const char *filename, sqlite3 *db)
 
     sqlite3_finalize(stmt);
     fclose(file);
-    printf("规则已导出到文件: %s\n", filename);
+    printf("\033[1;32m规则已导出到文件: %s\033[0m\n", filename);
+}
+
+
+// 打印规则
+void printRules(sqlite3* db) 
+{
+    const char* sql;
+    sql = "SELECT * FROM rules";
+    
+    sqlite3_stmt* statement;
+    
+    if (sqlite3_prepare_v2(db, sql, -1, &statement, NULL) != SQLITE_OK) {
+        printf("\033[1;31m查询规则失败。\033[0m\n");
+        return;
+    }
+
+    printf("\033[1;93mID\tProtocol\tSrc IP\t\tDst IP\t\tSrc Port\tDst Port \tStart Time\t\tEnd Time\t\tAction\tRemarks\033[0m\n");
+
+    while (sqlite3_step(statement) == SQLITE_ROW) {
+        int id = sqlite3_column_int(statement, 0);
+        const char* protocol = (const char*)sqlite3_column_text(statement, 1);
+        const char* src_ip = (const char*)sqlite3_column_text(statement, 2);
+        const char* dst_ip = (const char*)sqlite3_column_text(statement, 3);
+        int src_port = sqlite3_column_int(statement, 4);
+        int dst_port = sqlite3_column_int(statement, 5);
+        const char* start_time = (const char*)sqlite3_column_text(statement, 6);
+        const char* end_time = (const char*)sqlite3_column_text(statement, 7);
+        int action = sqlite3_column_int(statement, 8);
+        const char* remarks = (const char*)sqlite3_column_text(statement, 9);
+        
+        printf("%-3d\t%-8s\t%-15s\t%-15s\t%-8d\t%-8d\t%-16s\t%-16s\t%-6d\t%s\n", id, protocol, src_ip, dst_ip, 
+               src_port, dst_port, start_time, end_time, action, remarks);
+               
+    }
+    
+    sqlite3_finalize(statement);
 }
 
 
@@ -605,7 +632,7 @@ bool writeRulesToDevice(sqlite3* db)
 
     if (sqlite3_prepare_v2(db, sql, -1, &statement, NULL) != SQLITE_OK) 
     {
-        printf("查询规则失败。\n");
+        printf("\033[1;31m查询规则失败。\033[0m\n");
         return false;
     }
 
@@ -613,7 +640,7 @@ bool writeRulesToDevice(sqlite3* db)
     int fd = open(DEVICE_FILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     if (fd < 0) 
     {
-        printf("无法打开或创建设备文件。\n");
+        printf("\033[1;31m无法打开或创建设备文件。\033[0m\n");
         sqlite3_finalize(statement);
         return false;
     }
@@ -638,7 +665,7 @@ bool writeRulesToDevice(sqlite3* db)
         ssize_t bytes_written = write(fd, rule, strlen(rule));
         if (bytes_written < 0) 
         {
-            printf("写入设备文件失败。\n");
+            printf("\033[1;31m写入设备文件失败。\033[0m\n");
             close(fd);
             sqlite3_finalize(statement);
             return false;
@@ -646,7 +673,7 @@ bool writeRulesToDevice(sqlite3* db)
     }
 
     // 关闭设备文件
-    printf("规则已成功写入设备文件/dev/firewall。");
+    printf("\033[1;32m规则已成功写入设备文件/dev/firewall。\033[0m");
     close(fd);
     sqlite3_finalize(statement);
     return true;
@@ -669,35 +696,51 @@ Rule parseRuleParam(char* argv[])
 
     // 复制字符串到字符指针成员
     if(!isValidProtocol(argv[0])){
-        printf("输入的协议无效。\n");
-    }else {strcpy(rule.protocol, argv[0]);}
+        printf("\033[1;31m输入的协议无效。\033[0m\n");
+        exit(0);
+    } else {strcpy(rule.protocol, argv[0]);}
 
     if(!isValidIPAddress(argv[1])){
-        printf("输入的源ip无效。\n");
-    }else {strcpy(rule.src_ip, argv[1]);}
+        printf("\033[1;31m输入的源ip无效。\033[0m\n");
+        exit(0);
+    } else {strcpy(rule.src_ip, argv[1]);}
 
     if(!isValidIPAddress(argv[2])){
-        printf("输入的目标ip无效。\n");
-    }else {strcpy(rule.dst_ip, argv[2]);}
+        printf("\033[1;31m输入的目标ip无效。\033[0m\n");
+        exit(0);
+    } else {strcpy(rule.dst_ip, argv[2]);}
 
     if(!isValidPort(atoi(argv[3]))){
-        printf("输入的源端口无效。\n");
-    }else {rule.src_port = atoi(argv[3]);}
+        printf("\033[1;31m输入的源端口无效。\033[0m\n");
+        exit(0);
+    } else {rule.src_port = atoi(argv[3]);}
 
     if(!isValidPort(atoi(argv[4]))){
-        printf("输入的目标端口无效。\n");
-    }else {rule.dst_port = atoi(argv[4]);}
+        printf("\033[1;31m输入的目标端口无效。\033[0m\n");
+        exit(0);
+    } else {rule.dst_port = atoi(argv[4]);}
     
-
     if(!isValidDateTime(removeQuotes(argv[5]))){
-        printf("输入的开始时间无效。\n");
-    }else {strcpy(rule.start_time, argv[5]);}
+        printf("\033[1;31m输入的开始时间无效。\033[0m\n");
+        exit(0);
+    } else if(!isValidDateTime(removeQuotes(argv[6]))){
+        printf("\033[1;31m输入的结束时间无效。\033[0m\n");
+        exit(0);
+    } else if(!isEndLaterThanStart(removeQuotes(argv[5]), removeQuotes(argv[6]))){
+        printf("\033[1;31m时间无效，结束时间不晚于开始时间。\033[0m\n");
+        exit(0);
+    } else {
+        strcpy(rule.start_time, argv[5]);
+        strcpy(rule.end_time, argv[6]);
+    }
 
-    if(!isValidDateTime(removeQuotes(argv[6]))){
-        printf("输入的结束时间无效。\n");
-    }else {strcpy(rule.end_time, argv[6]);}
-
-    rule.action = atoi(argv[7]);
+    if(atoi(argv[7]) == 0 || atoi(argv[7]) == 1){
+        rule.action = atoi(argv[7]);
+    } else {
+        printf("\033[1;31m输入的动作无效。\033[0m\n");
+        exit(0);
+    }
+    
     strcpy(rule.remarks, argv[8]);
 
     return rule;
@@ -722,7 +765,7 @@ Rule getRuleFromUserInput()
     Rule rule;
     memset(&rule, 0, sizeof(Rule));
 
-    printf("请输入规则的参数：");
+    printf("请按照提示输入规则的参数");
 
     printf("协议类型 (tcp/udp/icmp/all): ");
     getchar(); 
@@ -734,7 +777,8 @@ Rule getRuleFromUserInput()
             rule.protocol = input;
             break; 
         } else {
-            printf("输入的协议无效，请重新输入：");
+            printf("\033[1;31m输入的协议无效。\033[0m\n");
+            printf("请重新输入：");
             free(input);
             
         }
@@ -748,7 +792,8 @@ Rule getRuleFromUserInput()
             rule.src_ip = input;
             break; 
         } else {
-            printf("输入的源ip无效，请重新输入：");
+            printf("\033[1;31m输入的源ip无效。\033[0m\n");
+            printf("请重新输入：");
             free(input);
         }
     }
@@ -761,7 +806,8 @@ Rule getRuleFromUserInput()
             rule.dst_ip = input;
             break; 
         } else {
-            printf("输入的目标ip无效，请重新输入：");
+            printf("\033[1;31m输入的目标ip无效。\033[0m\n");
+            printf("请重新输入：");
             free(input);
         }
     }
@@ -775,7 +821,8 @@ Rule getRuleFromUserInput()
             rule.src_port = srcPort;
             break;
         } else {
-            printf("输入的源端口无效，请重新输入：");
+            printf("\033[1;31m输入的源端口无效。\033[0m\n");
+            printf("请重新输入：");
         }
     }
 
@@ -788,7 +835,8 @@ Rule getRuleFromUserInput()
             rule.dst_port = dstPort;
             break;
         } else {
-            printf("输入的目标端口无效，请重新输入：");
+            printf("\033[1;31m输入的目标端口无效。\033[0m\n");
+            printf("请重新输入：");
         }
     }
 
@@ -801,7 +849,8 @@ Rule getRuleFromUserInput()
             rule.start_time = input;
             break; 
         } else {
-            printf("输入的开始时间无效，请重新输入：");
+            printf("\033[1;31m输入的开始时间无效。\033[0m\n");
+            printf("请重新输入：");
             free(input);
         }
     }
@@ -810,19 +859,34 @@ Rule getRuleFromUserInput()
     while (1) 
     {
         input = getInputString();
-        if (isValidDateTime(input)) {
-            rule.end_time = input;
-            break; 
-        } else {
-            printf("输入的结束时间无效，请重新输入：");
+        if (!isValidDateTime(input)) {
+            printf("\033[1;31m输入的结束时间无效。\033[0m\n");
+            printf("请重新输入：");
             free(input);
+        } else if(!isEndLaterThanStart(rule.start_time, input)){
+            printf("\033[1;31m输入的结束时间不晚于开始时间。\033[0m\n");
+            printf("请重新输入：");
+            free(input);
+        } else{
+            rule.end_time = input;
+            break;
         }
     }
 
     printf("执行动作 (0拦截/1通过): ");
-    int action = 0;
-    scanf("%d", &action);
-    rule.action = (bool)action;
+    while(1)
+    {
+        int action = -1;
+        scanf("%d", &action);
+        if(action == 0 || action == 1){
+            rule.action = (bool)action; 
+            break;    
+        } else {
+            printf("\033[1;31m输入的动作无效。\033[0m\n");
+            printf("请重新输入：");
+        }
+    }
+    
 
     printf("备注: ");
     char buffer[100]; 
@@ -832,6 +896,7 @@ Rule getRuleFromUserInput()
 
     return rule;
 }
+
 
 // 根据规则ID查找规则对象
 Rule findRuleById(sqlite3 *db, int ruleId) 
@@ -847,7 +912,7 @@ Rule findRuleById(sqlite3 *db, int ruleId)
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
 
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "无法执行查询: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "\033[1;31m无法执行查询: %s\033[0m\n", sqlite3_errmsg(db));
         return rule;
     }
 
@@ -872,6 +937,27 @@ Rule findRuleById(sqlite3 *db, int ruleId)
     return rule;
 }
 
+
+// 验证规则是否存在
+bool isRuleEmpty(const Rule* rule) 
+{
+    if (rule->id == 0 &&
+        rule->protocol == NULL &&
+        rule->src_ip == NULL &&
+        rule->dst_ip == NULL &&
+        rule->src_port == 0 &&
+        rule->dst_port == 0 &&
+        rule->start_time == NULL &&
+        rule->end_time == NULL &&
+        rule->action == 0 &&
+        rule->remarks == NULL) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 // 给规则的字符指针动态分配内存并获取输入的字符串
 char* getInputString()
 {
@@ -890,6 +976,7 @@ bool isValidProtocol(const char* protocol)
 {
     return (strcmp(protocol, "tcp") == 0 || strcmp(protocol, "udp") == 0 || strcmp(protocol, "icmp") == 0 || strcmp(protocol, "all") == 0);
 }
+
 
 // 验证IP的有效性
 bool isValidIPAddress(const char* ip) 
@@ -920,23 +1007,64 @@ bool isValidPort(int port)
 // 验证时间的有效性
 bool isValidDateTime(const char* datetime) 
 {
-    // 正则表达式模式，匹配 "YYYY-MM-DD HH:MM:SS" 格式的日期时间
+    // YYYY-MM-DD HH:MM:SS
     const char* pattern = "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$";
     
     regex_t regex;
     int ret = regcomp(&regex, pattern, REG_EXTENDED);
-    if (ret != 0) 
-    {// 正则表达式编译失败
-        return false;
-    }
+    if (ret != 0) {return false;}
     
     ret = regexec(&regex, datetime, 0, NULL, 0);
     regfree(&regex);
     
-    return (ret == 0);
+    if (ret != 0) {return false;}
+    
+    // 提取日期和时间
+    int year, month, day, hour, minute, second;
+    sscanf(datetime, "%d-%d-%d %d:%d:%d", &year, &month, &day, &hour, &minute, &second);
+    
+    // 检查年份和月份是否合法
+    if (year < 0 || month < 1 || month > 12) {return false;}
+    
+    // 检查天数是否合法
+    int maxDays = 31;
+    
+    if (month == 4 || month == 6 || month == 9 || month == 11) {maxDays = 30;} 
+    else if (month == 2) 
+    {
+    bool isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    maxDays = isLeapYear ? 29 : 28;
+    }
+    
+    if (day < 1 || day > maxDays) {return false;}
+    
+    // 检查小时、分钟和秒是否合法
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {return false;}
+    
+    return true;
 }
 
-                             
+
+// 验证结束时间是否晚于开始时间
+bool isEndLaterThanStart(const char* start, const char* end) 
+{
+    // 将开始时间和结束时间解析为日期时间对象
+    struct tm tmStart, tmEnd;
+    memset(&tmStart, 0, sizeof(struct tm));
+    memset(&tmEnd, 0, sizeof(struct tm));
+    
+    strptime(start, "%Y-%m-%d %H:%M:%S", &tmStart);
+    strptime(end, "%Y-%m-%d %H:%M:%S", &tmEnd);
+    
+    // 将日期时间对象转换为时间戳
+    time_t timestampStart = mktime(&tmStart);
+    time_t timestampEnd = mktime(&tmEnd);
+    
+    // 比较时间戳，验证结束时间是否晚于开始时间
+    return (timestampEnd > timestampStart);
+}
+
+
 // // 将输入的字符串时间转换为time_t数据类型
 // time_t convertToTimeT(const char* datetimeStr) 
 // {
