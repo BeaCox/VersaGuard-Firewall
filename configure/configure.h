@@ -37,32 +37,35 @@ bool deleteRule(sqlite3 *db, int ruleId);
 // 修改规则
 bool updateRule(sqlite3 *db, int ruleId, const Rule *rule);
 
-// 打印规则
-void printRules(sqlite3* db);
-
 // 从文件导入规则
 void importRules(const char *filename, sqlite3 *db);
 
 // 导出规则到文件
 void exportRules(const char *filename, sqlite3 *db);
 
+// 打印规则
+void printRules(sqlite3* db);
+
 // 将控制规则写入设备文件传入核心层
 bool writeRulesToDevice(sqlite3* db);
 
-//规则参数解析
+// 规则参数解析
 Rule parseRuleParam(char* argv[]);
 
-//去掉在命令行参数模式为避免空格引起歧义而将时间括起来的引号
+// 去掉在命令行参数模式为避免空格引起歧义而将时间括起来的引号
 char* removeQuotes(char* str);
 
-//获取输入的字符串
-char* getInputString();
-
-//交互模式从输入获得规则
+// 交互模式从输入获得规则
 Rule getRuleFromUserInput();
 
 // 根据规则ID查找规则对象
 Rule findRuleById(sqlite3 *db, int ruleId);
+
+// 验证规则是否存在
+bool isRuleEmpty(const Rule* rule);
+
+// 获取输入的字符串
+char* getInputString();
 
 // 验证协议的有效性
 bool isValidProtocol(const char* protocol);
@@ -75,5 +78,8 @@ bool isValidPort(int port);
 
 // 验证时间的有效性
 bool isValidDateTime(const char* datetime);
+
+// 验证结束时间是否晚于开始时间
+bool isEndLaterThanStart(const char* start, const char* end);
 
 #endif
