@@ -1,17 +1,33 @@
 #include "database.h"
 
+// 应用的数据库放在用户家目录下的VersaGuard目录下
+#define APP_DIR "VersaGuard"
+#define APP_DB "rules.db"
+
 static sqlite3 *db;
 
 // 初始化数据库并创建表
 int initDatabase()
 {
-    int rc = sqlite3_open("rules.db", &db);
+    // 获取用户家目录
+    const char *homeDir = g_get_home_dir();
+    // 如果APP_DIR目录不存在，创建目录
+    char appDirPath[256];
+    snprintf(appDirPath, sizeof(appDirPath), "%s/%s", homeDir, APP_DIR);
+    if (!g_file_test(appDirPath, G_FILE_TEST_IS_DIR))
+    {
+        g_mkdir_with_parents(appDirPath, 0755);
+    }
+    // 创建数据库
+    char dbPath[256];
+    snprintf(dbPath, sizeof(dbPath), "%s/%s/%s", homeDir, APP_DIR, APP_DB);
+    int rc = sqlite3_open(dbPath, &db);
     if (rc != SQLITE_OK)
     {
         return rc;
     }
 
-    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, src_ip TEXT, dst_ip TEXT, src_port INTEGER, dst_port INTEGER, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
+    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, src_ip TEXT, dst_ip TEXT, src_port TEXT, dst_port TEXT, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
     rc = sqlite3_exec(db, createTableQuery, 0, 0, 0);
     if (rc != SQLITE_OK)
     {
@@ -26,13 +42,13 @@ void closeDatabase()
     sqlite3_close(db);
 }
 
-gboolean insertData(const char *protocol, const char *src_ip, const char *dst_ip, int src_port, int dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
+gboolean insertData(const char *protocol, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
 {
     char *errorMsg = 0;
     char insertQuery[256];
     int actionValue = action ? 1 : 0;
 
-    snprintf(insertQuery, sizeof(insertQuery), "INSERT INTO rules (protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) VALUES ('%s', '%s', '%s', %d, %d, '%s', '%s', %d, '%s');",
+    snprintf(insertQuery, sizeof(insertQuery), "INSERT INTO rules (protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s');",
              protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks);
 
     int rc = sqlite3_exec(db, insertQuery, 0, 0, &errorMsg);
@@ -46,7 +62,7 @@ gboolean insertData(const char *protocol, const char *src_ip, const char *dst_ip
     return TRUE;
 }
 
-int importData(const char *filename)
+int importData(const char *filename, GtkListStore *liststore)
 {
     int count = 0;
     sqlite3 *importDb;
@@ -70,14 +86,14 @@ int importData(const char *filename)
         const char *protocol = (const char *)sqlite3_column_text(stmt, 1);
         const char *src_ip = (const char *)sqlite3_column_text(stmt, 2);
         const char *dst_ip = (const char *)sqlite3_column_text(stmt, 3);
-        int src_port = sqlite3_column_int(stmt, 4);
-        int dst_port = sqlite3_column_int(stmt, 5);
+        const char *src_port = (const char *)sqlite3_column_text(stmt, 4);
+        const char *dst_port = (const char *)sqlite3_column_text(stmt, 5);
         const char *start_time = (const char *)sqlite3_column_text(stmt, 6);
         const char *end_time = (const char *)sqlite3_column_text(stmt, 7);
         gboolean action = sqlite3_column_int(stmt, 8) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 9);
 
-        if(!insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks)){
+        if(checkConflict(liststore, (gchar *)protocol, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks)){
             count--;
         }
     }
@@ -92,12 +108,20 @@ int exportData(const char *filename, GtkTreeView *data)
 {
     sqlite3 *exportDb;
     int rc = sqlite3_open(filename, &exportDb);
-    if (rc != SQLITE_OK)
+    // 不允许导出到应用正在使用的数据库（通过比较文件路径判断）
+    char dbPath[256];
+    snprintf(dbPath, sizeof(dbPath), "%s/%s/%s", g_get_home_dir(), APP_DIR, APP_DB);
+    if (rc == SQLITE_OK && strcmp(filename, dbPath) == 0)
+    {
+        g_warning("不允许导出到应用正在使用的数据库");
+        return 0;
+    }
+    else if (rc != SQLITE_OK)
     {
         g_warning("打开数据库错误: %s", sqlite3_errmsg(exportDb));
         return 0;
     }
-    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, src_ip TEXT, dst_ip TEXT, src_port INTEGER, dst_port INTEGER, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
+    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, src_ip TEXT, dst_ip TEXT, src_port TEXT, dst_port TEXT, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
     rc = sqlite3_exec(exportDb, createTableQuery, 0, 0, 0);
     if (rc != SQLITE_OK)
     {
@@ -123,8 +147,8 @@ int exportData(const char *filename, GtkTreeView *data)
         gchar *protocol;
         gchar *src_ip;
         gchar *dst_ip;
-        gint src_port;
-        gint dst_port;
+        gchar *src_port;
+        gchar *dst_port;
         gchar *start_time;
         gchar *end_time;
         gboolean action;
@@ -185,13 +209,13 @@ int deleteData(int id){
     return TRUE;
 }
 
-gboolean updateData(int id, const char *protocol, const char *src_ip, const char *dst_ip, int src_port, int dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
+gboolean updateData(int id, const char *protocol, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
 {
     char *errorMsg = 0;
     char updateQuery[256];
     int actionValue = action ? 1 : 0;
 
-    snprintf(updateQuery, sizeof(updateQuery), "UPDATE rules SET protocol = '%s', src_ip = '%s', dst_ip = '%s', src_port = %d, dst_port = %d, start_time = '%s', end_time = '%s', action = %d, remarks = '%s' WHERE id = %d;",
+    snprintf(updateQuery, sizeof(updateQuery), "UPDATE rules SET protocol = '%s', src_ip = '%s', dst_ip = '%s', src_port = '%s', dst_port = '%s', start_time = '%s', end_time = '%s', action = %d, remarks = '%s' WHERE id = %d;",
              protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks, id);
 
     int rc = sqlite3_exec(db, updateQuery, 0, 0, &errorMsg);
@@ -225,16 +249,12 @@ gboolean showData(GtkListStore *liststore)
         const char *protocol = (const char *)sqlite3_column_text(stmt, 1);
         const char *src_ip = (const char *)sqlite3_column_text(stmt, 2);
         const char *dst_ip = (const char *)sqlite3_column_text(stmt, 3);
-        int src_port = sqlite3_column_int(stmt, 4);
-        int dst_port = sqlite3_column_int(stmt, 5);
+        const char *src_port = (const char *)sqlite3_column_text(stmt, 4);
+        const char *dst_port = (const char *)sqlite3_column_text(stmt, 5);
         const char *start_time = (const char *)sqlite3_column_text(stmt, 6);
         const char *end_time = (const char *)sqlite3_column_text(stmt, 7);
         gboolean action = sqlite3_column_int(stmt, 8) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 9);
-
-        // src_port和dst_port转换为char*后再插入liststore
-        gchar *src_port_str = g_strdup_printf("%d", src_port);
-        gchar *dst_port_str = g_strdup_printf("%d", dst_port);
 
         GtkTreeIter iter;
         gtk_list_store_append(liststore, &iter);
@@ -243,8 +263,8 @@ gboolean showData(GtkListStore *liststore)
                            1, protocol,
                            2, src_ip,
                            3, dst_ip,
-                           4, src_port_str,
-                           5, dst_port_str,
+                           4, src_port,
+                           5, dst_port,
                            6, start_time,
                            7, end_time,
                            8, action,

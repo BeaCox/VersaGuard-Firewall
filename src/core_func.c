@@ -20,17 +20,19 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
     // 运行对话框并等待用户选择文件
     res = gtk_dialog_run(GTK_DIALOG(dialog));
     // 如果文件不是 SQLite 文件，给出相应的提示并让用户重新选择文件
-    while (res == GTK_RESPONSE_ACCEPT)
+    if (res == GTK_RESPONSE_ACCEPT)
     {
         filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
         if (g_str_has_suffix(filename, ".db"))
         {
             // 导入数据库
-            int count = importData(filename);
+            int count = importData(filename, GTK_LIST_STORE(data));
+            // 关闭对话框
+            gtk_widget_destroy(dialog);
             if (!count)
             {
                 // 提示用户导入失败
-                GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(dialog),
+                GtkWidget *error_dialog = gtk_message_dialog_new(NULL,
                                                                  GTK_DIALOG_DESTROY_WITH_PARENT,
                                                                  GTK_MESSAGE_ERROR,
                                                                  GTK_BUTTONS_CLOSE,
@@ -40,8 +42,6 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
             }
             else
             {
-                // 关闭对话框
-                gtk_widget_destroy(dialog);
                 // 提示用户导入成功，并显示导入记录数量
                 GtkWidget *success_dialog = gtk_message_dialog_new(NULL,
                                                                    GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -63,7 +63,7 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
         else
         {
             // 提示用户选择 SQLite 文件
-            GtkWidget *hint_dialog = gtk_message_dialog_new(GTK_WINDOW(dialog),
+            GtkWidget *hint_dialog = gtk_message_dialog_new(NULL,
                                                             GTK_DIALOG_DESTROY_WITH_PARENT,
                                                             GTK_MESSAGE_ERROR,
                                                             GTK_BUTTONS_CLOSE,
@@ -127,10 +127,7 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
         else
         {
             // 如果没有冲突，将新的一行写入database和ListStore并刷新TreeView
-            // 将新的一行写入database(先将srcport和dstport转换为整数)
-            gint srcport_int = atoi(srcport);
-            gint dstport_int = atoi(dstport);
-            insertData(protocol, srcip, dstip, srcport_int, dstport_int, stime, etime, block, remarks);
+            insertData(protocol, srcip, dstip, srcport, dstport, stime, etime, block, remarks);
             // 将新的一行写入ListStore
             GtkTreeIter iter;
             gtk_list_store_append(liststore, &iter);
@@ -580,8 +577,7 @@ void on_export_button_clicked(GtkButton *button, gpointer data)
     gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "rules.db");
     // 运行对话框并等待用户选择文件
     gint res = gtk_dialog_run(GTK_DIALOG(dialog));
-    // 如果用户选择了文件(while循环用于判断用户是否选择了文件)
-    while (res == GTK_RESPONSE_ACCEPT)
+    if (res == GTK_RESPONSE_ACCEPT)
     {
         //  获取用户选择的文件名
         gchar *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
@@ -606,7 +602,7 @@ void on_export_button_clicked(GtkButton *button, gpointer data)
             g_free(filename);
             return;
         }
-        // 如果导出失败，提示用户导出失败，并让用户重新选择文件
+        // 如果导出失败，提示用户导出失败
         else
         {
             // 提示用户导出失败
@@ -758,90 +754,6 @@ void on_select_all_button_clicked(GtkButton *button, gpointer data)
     gtk_tree_selection_select_all(selection);
 }
 
-// 检查规则是否冲突，如果冲突，返回具体冲突规则的path，否则返回NULL（为便于编辑时检查冲突，将编辑的行的path传入, path默认为NULL，表示新增规则）
-GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime, GtkTreePath *path){
-    GtkTreeIter iter;
-    gboolean valid;
-    gboolean flag = FALSE; // 标记是否已出现编辑的行
-
-    // 遍历ListStore中的每一行
-    valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(liststore), &iter);
-
-    // 如果ListStore为空，直接返回NULL
-    if (!valid)
-        return NULL;
-
-    // 存储每一行的数据
-    gchar *storedProtocol, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime;
-
-
-    while (valid) {
-
-        // 如果是编辑的行，跳过（只可能出现一次，用flag标记）
-        if(path != NULL && !flag && gtk_tree_path_compare(path, gtk_tree_model_get_path(GTK_TREE_MODEL(liststore), &iter)) == 0){
-            flag = TRUE;
-            valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(liststore), &iter);
-            continue;
-        }
-
-        gtk_tree_model_get(GTK_TREE_MODEL(liststore), &iter,
-                           1, &storedProtocol,
-                           2, &storedSrcIP,
-                           3, &storedDstIP,
-                           4, &storedSrcPort,
-                           5, &storedDstPort,
-                           6, &storedSTime,
-                           7, &storedETime,
-                           -1);
-
-        // 进行冲突检查
-        if (g_strcmp0(storedProtocol, protocol) == 0 &&
-            g_strcmp0(storedSrcIP, srcip) == 0 &&
-            g_strcmp0(storedDstIP, dstip) == 0 &&
-            g_strcmp0(storedSrcPort, srcport) == 0 &&
-            g_strcmp0(storedDstPort, dstport) == 0 &&
-            g_strcmp0(storedSTime, stime) == 0 &&
-            g_strcmp0(storedETime, etime) == 0) {
-            // 规则冲突，返回冲突的行的路径
-            // 释放资源
-            // g_free(storedProtocol);
-            // if(strlen(storedSrcIP))
-            //     g_free(storedSrcIP);
-            // if(strlen(storedDstIP))
-            //     g_free(storedDstIP);
-            // if(strlen(storedSrcPort))
-            //     g_free(storedSrcPort);
-            // if(strlen(storedDstPort))
-            //     g_free(storedDstPort);
-            // if(strlen(storedSTime)) 
-            //     g_free(storedSTime);
-            // if(strlen(storedETime))
-            //     g_free(storedETime);
-            return gtk_tree_model_get_path(GTK_TREE_MODEL(liststore), &iter);
-        }
-
-        // 获取下一行
-        valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(liststore), &iter);
-    }
-
-    // 释放资源
-    // g_free(storedProtocol);
-    // if(strlen(storedSrcIP))
-    //     g_free(storedSrcIP);
-    // if(strlen(storedDstIP))
-    //     g_free(storedDstIP);
-    // if(strlen(storedSrcPort))
-    //     g_free(storedSrcPort);
-    // if(strlen(storedDstPort))
-    //     g_free(storedDstPort);
-    // if(strlen(storedSTime)) 
-    //     g_free(storedSTime);
-    // if(strlen(storedETime))
-    //     g_free(storedETime);
-
-    return NULL;
-}
-
 
 // 双击treeview中的行或选择treeview中的行后点击Enter时，弹出编辑对话框
 void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data)
@@ -933,11 +845,8 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
             gtk_tree_model_get_iter(GTK_TREE_MODEL(liststore), &iter, path);
             gint id;
             gtk_tree_model_get(GTK_TREE_MODEL(liststore), &iter, 0, &id, -1);
-            // 修改数据库中的记录(先进行数据类型转换)
-            int srcport_int = atoi(srcport);
-            int dstport_int = atoi(dstport);
 
-            if (!updateData(id, protocol, srcip, dstip, srcport_int, dstport_int, stime, etime, block, remarks))
+            if (!updateData(id, protocol, srcip, dstip, srcport, dstport, stime, etime, block, remarks))
             {
                 // 提示用户修改数据库失败
                 GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),

@@ -3,6 +3,7 @@
 
 #include <gtk/gtk.h>
 #include "database.h"
+#include "utils.h"
 
 // 导入功能
 void on_import_button_clicked(GtkButton *button, gpointer data);
@@ -27,8 +28,6 @@ void on_delete_button_clicked(GtkButton *button, gpointer data);
 gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data);
 // 全选功能
 void on_select_all_button_clicked(GtkButton *button, gpointer data);
-// 检查冲突功能
-GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime, GtkTreePath *path);
 // 双击编辑功能
 void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data);
 #endif // CORE_FUNC_H

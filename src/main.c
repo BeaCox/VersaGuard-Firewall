@@ -1,6 +1,7 @@
 #include "database.h"
 #include "headerbar.h"
 #include "core_func.h"
+#include "utils.h"
 
 int main(int argc, char *argv[])
 {
