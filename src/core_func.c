@@ -94,7 +94,8 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
 
     if (res == GTK_RESPONSE_OK)
     {
-        GtkListStore *liststore = GTK_LIST_STORE(data);
+        // 传入的是treeviw，获取treeview对应的ListStore
+        GtkListStore *liststore = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(data)));
         // 如果点击OK，将所有修改的内容作为新的一行（如果没有和已有规则冲突）写入database和ListStore并刷新TreeView
         // 获取entry中的内容
         // protocol的内容从comboboxtext中获取
@@ -121,6 +122,12 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
                                                                 "Conflict with existing rules!");
             gtk_dialog_run(GTK_DIALOG(conflict_dialog));
             gtk_widget_destroy(conflict_dialog);
+            // 滚动到冲突的行
+            GtkTreeView *treeview = GTK_TREE_VIEW(data);
+            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 0, 0);
+            // 高亮冲突的行
+            gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), conflict_path);
+
             // 释放资源
             gtk_tree_path_free(conflict_path);
         }
@@ -144,6 +151,14 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
                                -1);
             // 刷新TreeView
             showData(liststore);
+            // 提示用户添加成功
+            GtkWidget *success_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),
+                                                            GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                            GTK_MESSAGE_INFO,
+                                                            GTK_BUTTONS_CLOSE,
+                                                            "Add successful!");
+            gtk_dialog_run(GTK_DIALOG(success_dialog));
+            gtk_widget_destroy(success_dialog);
         }
 
         // 释放资源（除了protocol都可能为空）
@@ -155,15 +170,6 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
         // g_free(stime);
         // g_free(etime);
         // g_free(remarks);
-
-        // 提示用户添加成功
-        GtkWidget *success_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),
-                                                           GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                           GTK_MESSAGE_INFO,
-                                                           GTK_BUTTONS_CLOSE,
-                                                           "Add successful!");
-        gtk_dialog_run(GTK_DIALOG(success_dialog));
-        gtk_widget_destroy(success_dialog);
     }
 
     gtk_widget_destroy(edit_dialog);
@@ -809,7 +815,6 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
 
     if (res == GTK_RESPONSE_OK)
     {
-        GtkListStore *liststore = GTK_LIST_STORE(data);
         // 获取entry中的内容
         // protocol的内容从comboboxtext中获取
         protocol = gtk_combo_box_text_get_active_text(combox_protocol);
@@ -834,6 +839,11 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
                                                                 "Conflict with existing rules!");
             gtk_dialog_run(GTK_DIALOG(conflict_dialog));
             gtk_widget_destroy(conflict_dialog);
+
+            // 滚动到冲突的行
+            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 0.0, 0.0);
+            // 选中冲突的行
+            gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), conflict_path);
             // 释放资源
             gtk_tree_path_free(conflict_path);
         }

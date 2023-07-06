@@ -286,7 +286,7 @@
                         <property name="margin-end">10</property>
                         <property name="image">add_image</property>
                         <property name="always-show-image">True</property>
-                        <signal name="clicked" handler="on_add_button_clicked" object="liststore" swapped="no"/>
+                        <signal name="clicked" handler="on_add_button_clicked" object="treeview" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -359,7 +359,8 @@
                     <property name="primary-icon-name">edit-find-symbolic</property>
                     <property name="primary-icon-activatable">False</property>
                     <property name="primary-icon-sensitive">False</property>
-                    <property name="placeholder-text" translatable="yes" context="点击搜索……">search here...</property>
+                    <property name="placeholder-text" translatable="yes" context="点击搜索……">Search here...</property>
+                    <signal name="search-changed" handler="on_search_entry_search_changed" swapped="no"/>
                   </object>
                   <packing>
                     <property name="left-attach">1</property>
