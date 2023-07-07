@@ -1,7 +1,8 @@
 #include "utils.h"
 
 // 检查规则是否冲突，如果冲突，返回具体冲突规则的path，否则返回NULL（为便于编辑时检查冲突，将编辑的行的path传入, path默认为NULL，表示新增规则）
-GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime, GtkTreePath *path){
+GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime, GtkTreePath *path)
+{
     GtkTreeIter iter;
     gboolean valid;
     gboolean flag = FALSE; // 标记是否已出现编辑的行
@@ -16,11 +17,12 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srci
     // 存储每一行的数据
     gchar *storedProtocol, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime;
 
-
-    while (valid) {
+    while (valid)
+    {
 
         // 如果是编辑的行，跳过（只可能出现一次，用flag标记）
-        if(path != NULL && !flag && gtk_tree_path_compare(path, gtk_tree_model_get_path(GTK_TREE_MODEL(liststore), &iter)) == 0){
+        if (path != NULL && !flag && gtk_tree_path_compare(path, gtk_tree_model_get_path(GTK_TREE_MODEL(liststore), &iter)) == 0)
+        {
             flag = TRUE;
             valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(liststore), &iter);
             continue;
@@ -43,7 +45,8 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srci
             g_strcmp0(storedSrcPort, srcport) == 0 &&
             g_strcmp0(storedDstPort, dstport) == 0 &&
             g_strcmp0(storedSTime, stime) == 0 &&
-            g_strcmp0(storedETime, etime) == 0) {
+            g_strcmp0(storedETime, etime) == 0)
+        {
             // 规则冲突，返回冲突的行的路径
             // 释放资源
             // g_free(storedProtocol);
@@ -55,7 +58,7 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srci
             //     g_free(storedSrcPort);
             // if(strlen(storedDstPort))
             //     g_free(storedDstPort);
-            // if(strlen(storedSTime)) 
+            // if(strlen(storedSTime))
             //     g_free(storedSTime);
             // if(strlen(storedETime))
             //     g_free(storedETime);
@@ -76,10 +79,85 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srci
     //     g_free(storedSrcPort);
     // if(strlen(storedDstPort))
     //     g_free(storedDstPort);
-    // if(strlen(storedSTime)) 
+    // if(strlen(storedSTime))
     //     g_free(storedSTime);
     // if(strlen(storedETime))
     //     g_free(storedETime);
 
     return NULL;
 }
+
+void on_search_entry_search_changed(GtkSearchEntry *searchentry, gpointer data)
+{
+    GtkTreeView *treeview = GTK_TREE_VIEW(data);
+    GtkTreeModel *model = gtk_tree_view_get_model(treeview);
+
+    // 获取搜索框中的文本
+    const gchar *search_text = gtk_entry_get_text(GTK_ENTRY(searchentry));
+
+    GtkTreeSelection *selection = gtk_tree_view_get_selection(treeview);
+    gtk_tree_selection_unselect_all(selection); // 清除之前的选择
+
+    // 如果搜索框中的文本为空，直接返回
+    if (strlen(search_text) == 0)
+        return;
+
+    GtkTreeIter iter;
+    gboolean valid = gtk_tree_model_get_iter_first(model, &iter);
+    gboolean first_match = TRUE; // 用于记录第一个匹配的行
+
+    while (valid)
+    {
+        gchar *storedProtocol, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime, *storedRemrks;
+        gtk_tree_model_get(model, &iter,
+                           1, &storedProtocol,
+                           2, &storedSrcIP,
+                           3, &storedDstIP,
+                           4, &storedSrcPort,
+                           5, &storedDstPort,
+                           6, &storedSTime,
+                           7, &storedETime,
+                           9, &storedRemrks,
+                           -1);
+
+        // 进行搜索(只要有一个字段包含搜索文本即可，对大小写不敏感)
+        gchar *lower_text = g_ascii_strdown(search_text, -1);
+        gboolean match = (strstr(g_ascii_strdown(storedProtocol, -1), lower_text) != NULL) ||
+                         (strstr(g_ascii_strdown(storedSrcIP, -1), lower_text) != NULL) ||
+                         (strstr(g_ascii_strdown(storedDstIP, -1), lower_text) != NULL) ||
+                         (strstr(g_ascii_strdown(storedSrcPort, -1), lower_text) != NULL) ||
+                         (strstr(g_ascii_strdown(storedDstPort, -1), lower_text) != NULL) ||
+                         (strstr(g_ascii_strdown(storedSTime, -1), lower_text) != NULL) ||
+                         (strstr(g_ascii_strdown(storedETime, -1), lower_text) != NULL) ||
+                         (strstr(g_ascii_strdown(storedRemrks, -1), lower_text) != NULL);
+
+        if (match)
+        {
+            // 高亮匹配的行
+            GtkTreePath *path = gtk_tree_model_get_path(model, &iter);
+            gtk_tree_selection_select_path(selection, path);
+
+            if (first_match)
+            {
+                // 滚动到第一个匹配的行
+                gtk_tree_view_scroll_to_cell(treeview, path, NULL, TRUE, 0, 0);
+                first_match = FALSE;
+            }
+
+            gtk_tree_path_free(path);
+        }
+
+        g_free(lower_text);
+        g_free(storedProtocol);
+        g_free(storedSrcIP);
+        g_free(storedDstIP);
+        g_free(storedSrcPort);
+        g_free(storedDstPort);
+        g_free(storedSTime);
+        g_free(storedETime);
+        g_free(storedRemrks);
+
+        valid = gtk_tree_model_iter_next(model, &iter);
+    }
+}
+
