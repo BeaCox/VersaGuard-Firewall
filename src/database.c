@@ -1,9 +1,5 @@
 #include "database.h"
 
-// 应用的数据库放在用户家目录下的VersaGuard目录下
-#define APP_DIR "VersaGuard"
-#define APP_DB "rules.db"
-
 static sqlite3 *db;
 
 // 初始化数据库并创建表
@@ -11,14 +7,14 @@ int initDatabase()
 {
     // 获取用户家目录
     const char *homeDir = g_get_home_dir();
-    // 如果APP_DIR目录不存在，创建目录
-    char appDirPath[256];
-    snprintf(appDirPath, sizeof(appDirPath), "%s/%s", homeDir, APP_DIR);
-    if (!g_file_test(appDirPath, G_FILE_TEST_IS_DIR))
+    // 构建数据库目录路径
+    char dbDirPath[256];
+    snprintf(dbDirPath, sizeof(dbDirPath), "%s/%s", homeDir, APP_DIR);
+    if (!g_file_test(dbDirPath, G_FILE_TEST_IS_DIR))
     {
-        g_mkdir_with_parents(appDirPath, 0755);
+        g_mkdir_with_parents(dbDirPath, 0755);
     }
-    // 创建数据库
+    // 构建数据库路径
     char dbPath[256];
     snprintf(dbPath, sizeof(dbPath), "%s/%s/%s", homeDir, APP_DIR, APP_DB);
     int rc = sqlite3_open(dbPath, &db);
@@ -51,11 +47,17 @@ gboolean insertData(const char *protocol, const char *src_ip, const char *dst_ip
     snprintf(insertQuery, sizeof(insertQuery), "INSERT INTO rules (protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s');",
              protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks);
 
+    // 插入数据到数据库
     int rc = sqlite3_exec(db, insertQuery, 0, 0, &errorMsg);
     if (rc != SQLITE_OK)
     {
         g_warning("插入数据错误: %s", errorMsg);
         sqlite3_free(errorMsg);
+        return FALSE;
+    }
+    // 插入数据到设备文件
+    if (!appendDataToDeviceFile(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action))
+    {
         return FALSE;
     }
 
@@ -93,7 +95,8 @@ int importData(const char *filename, GtkListStore *liststore)
         gboolean action = sqlite3_column_int(stmt, 8) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 9);
 
-        if(checkConflict(liststore, (gchar *)protocol, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks)){
+        if (checkConflict(liststore, (gchar *)protocol, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks))
+        {
             count--;
         }
     }
@@ -180,7 +183,7 @@ int exportData(const char *filename, GtkTreeView *data)
         // 释放当前路径的内存
         gtk_tree_path_free(path);
     }
-    count  =  g_list_length(selectedRows);
+    count = g_list_length(selectedRows);
     // 释放选中行列表的内存
     g_list_free(selectedRows);
 
@@ -191,18 +194,24 @@ int exportData(const char *filename, GtkTreeView *data)
     return count;
 }
 
-
-int deleteData(int id){
+int deleteData(int id)
+{
     char *errorMsg = 0;
     char deleteQuery[256];
 
     snprintf(deleteQuery, sizeof(deleteQuery), "DELETE FROM rules WHERE id = %d;", id);
 
+    // 从数据库中删除数据
     int rc = sqlite3_exec(db, deleteQuery, 0, 0, &errorMsg);
     if (rc != SQLITE_OK)
     {
         g_warning("删除数据错误: %s", errorMsg);
         sqlite3_free(errorMsg);
+        return FALSE;
+    }
+    // 重新写入设备文件
+    if (!writeDataToDeviceFile())
+    {
         return FALSE;
     }
 
@@ -218,11 +227,17 @@ gboolean updateData(int id, const char *protocol, const char *src_ip, const char
     snprintf(updateQuery, sizeof(updateQuery), "UPDATE rules SET protocol = '%s', src_ip = '%s', dst_ip = '%s', src_port = '%s', dst_port = '%s', start_time = '%s', end_time = '%s', action = %d, remarks = '%s' WHERE id = %d;",
              protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks, id);
 
+    // 从数据库中更新数据
     int rc = sqlite3_exec(db, updateQuery, 0, 0, &errorMsg);
     if (rc != SQLITE_OK)
     {
         g_warning("更新数据错误: %s", errorMsg);
         sqlite3_free(errorMsg);
+        return FALSE;
+    }
+    // 重新写入设备文件
+    if (!writeDataToDeviceFile())
+    {
         return FALSE;
     }
 
@@ -277,5 +292,77 @@ gboolean showData(GtkListStore *liststore)
     return TRUE;
 }
 
+// 全部写入设备文件（删除和编辑用）
+gboolean writeDataToDeviceFile()
+{
+    sqlite3_stmt *stmt;
+    const char *selectQuery = "SELECT * FROM rules;";
+    int rc = sqlite3_prepare_v2(db, selectQuery, -1, &stmt, NULL);
+    if (rc != SQLITE_OK)
+    {
+        g_warning("查询数据错误: %s", sqlite3_errmsg(db));
+        g_printerr("查询数据错误: %s\n", sqlite3_errmsg(db));
+        return FALSE;
+    }
 
+    FILE *fp = fopen(DEVICE_FILE, "w");
+    if (fp == NULL)
+    {
+        g_warning("打开设备文件错误: %s", strerror(errno));
+        g_printerr("打开设备文件错误: %s\n", strerror(errno));
+        return FALSE;
+    }
 
+    while (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        // 除了protocol和action，其他都可能为空，若为空则写入占位0
+        const char *protocol = (const char *)sqlite3_column_text(stmt, 1);
+        const char *src_ip = (const char *)sqlite3_column_text(stmt, 2);
+        const char *dst_ip = (const char *)sqlite3_column_text(stmt, 3);
+        const char *src_port = (const char *)sqlite3_column_text(stmt, 4);
+        const char *dst_port = (const char *)sqlite3_column_text(stmt, 5);
+        const char *start_time = (const char *)sqlite3_column_text(stmt, 6);
+        const char *end_time = (const char *)sqlite3_column_text(stmt, 7);
+        gboolean action = sqlite3_column_int(stmt, 8) != 0;
+
+        char line[256];
+        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %d\n",
+                 protocol, src_ip[0] == '\0' ? "0" : src_ip, dst_ip[0] == '\0' ? "0" : dst_ip, src_port[0] == '\0' ? "0" : src_port, dst_port[0] == '\0' ? "0" : dst_port, start_time[0] == '\0' ? "0" : start_time, end_time[0] == '\0' ? "0" : end_time, action);
+
+        fputs(line, fp);
+    }
+
+    fclose(fp);
+    sqlite3_finalize(stmt);
+
+    return TRUE;
+}
+
+// 追加到设备文件（添加和导入用）
+gboolean appendDataToDeviceFile(const char *protocol, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action)
+{
+    FILE *fp = fopen(DEVICE_FILE, "a");
+    if (fp == NULL)
+    {
+        g_warning("打开设备文件错误: %s", strerror(errno));
+        g_printerr("打开设备文件错误: %s\n", strerror(errno));
+        return FALSE;
+    }
+
+    char line[256];
+    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %d\n",
+             protocol, src_ip[0] == '\0' ? "0" : src_ip, dst_ip[0] == '\0' ? "0" : dst_ip, src_port[0] == '\0' ? "0" : src_port, dst_port[0] == '\0' ? "0" : dst_port, start_time[0] == '\0' ? "0" : start_time, end_time[0] == '\0' ? "0" : end_time, action);
+
+    fputs(line, fp);
+
+    fclose(fp);
+
+    return TRUE;
+}
+
+// 检查权限功能
+gboolean checkPermission()
+{
+    // 检查文件的读写权限，0为有权限，-1为无权限。两个权限都有返回1，否则返回0
+    return access(DEVICE_FILE, R_OK | W_OK) == 0;
+}

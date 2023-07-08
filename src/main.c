@@ -12,6 +12,15 @@ int main(int argc, char *argv[])
 
     gtk_init(&argc, &argv);
 
+    // 检查权限
+    if (!checkPermission()) {
+        // 没有权限，弹出对话框
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "No write access to device files! Please run as root!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return 0;
+    }
+
     // 加载Glade布局文件
     builder = gtk_builder_new_from_resource("/glade/main.glade");
 

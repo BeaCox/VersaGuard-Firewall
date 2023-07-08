@@ -124,7 +124,9 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
             gtk_widget_destroy(conflict_dialog);
             // 滚动到冲突的行
             GtkTreeView *treeview = GTK_TREE_VIEW(data);
-            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 0, 0);
+            // 清除之前的选择
+            gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(treeview));
+            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 1.0, 0.0);
             // 高亮冲突的行
             gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), conflict_path);
 
@@ -160,16 +162,6 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
             gtk_dialog_run(GTK_DIALOG(success_dialog));
             gtk_widget_destroy(success_dialog);
         }
-
-        // 释放资源（除了protocol都可能为空）
-        // g_free(protocol);
-        // g_free(srcip);
-        // g_free(dstip);
-        // g_free(srcport);
-        // g_free(dstport);
-        // g_free(stime);
-        // g_free(etime);
-        // g_free(remarks);
     }
 
     gtk_widget_destroy(edit_dialog);
@@ -630,7 +622,8 @@ void on_export_button_clicked(GtkButton *button, gpointer data)
 void on_delete_button_clicked(GtkButton *button, gpointer data)
 {
     // 如果没有选中任何行，给出相应的提示
-    if (gtk_tree_selection_count_selected_rows(GTK_TREE_SELECTION(data)) == 0)
+    GtkTreeSelection *selection = GTK_TREE_SELECTION(data);
+    if (gtk_tree_selection_count_selected_rows(selection) == 0)
     {
         GtkWidget *hint_dialog = gtk_message_dialog_new(NULL,
                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -654,14 +647,13 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
     if (res == GTK_RESPONSE_YES)
     {
         // 获取treeview
-        GtkTreeView *treeview = GTK_TREE_VIEW(gtk_tree_selection_get_tree_view(GTK_TREE_SELECTION(data)));
+        GtkTreeView *treeview = GTK_TREE_VIEW(gtk_tree_selection_get_tree_view(selection));
         // 获取liststore
         GtkListStore *liststore = GTK_LIST_STORE(gtk_tree_view_get_model(treeview));
-        // 获取selection
-        GtkTreeSelection *selection = gtk_tree_view_get_selection(treeview);
         // 获取选中的行
         GList *selectedRows = gtk_tree_selection_get_selected_rows(selection, NULL);
         GList *lastRow = g_list_last(selectedRows);
+        int count = g_list_length(selectedRows);
 
         // 逆序遍历选中的行，以防删除后影响后续行的位置
         while (lastRow != NULL)
@@ -695,26 +687,9 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
             // 移动到上一个节点
             lastRow = g_list_previous(lastRow);
         }
-        int count = g_list_length(selectedRows);
+
         // 释放内存
         g_list_free(selectedRows);
-
-        // 更新数据库
-        if (!showData(liststore))
-        {
-            gtk_widget_destroy(confirm_dialog);
-            // 提示用户更新数据库失败
-            GtkWidget *error_dialog = gtk_message_dialog_new(NULL,
-                                                             GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                             GTK_MESSAGE_ERROR,
-                                                             GTK_BUTTONS_CLOSE,
-                                                             "Update database failed! Please check permissions!");
-            gtk_dialog_run(GTK_DIALOG(error_dialog));
-            gtk_widget_destroy(error_dialog);
-            // 释放内存
-            g_list_free(selectedRows);
-            return;
-        }
 
         // 提示用户删除成功，并显示删除记录数量
         // 关闭对话框
@@ -728,12 +703,14 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
         gtk_dialog_run(GTK_DIALOG(success_dialog));
         // 如果点击了关闭按钮，销毁对话框
         gtk_widget_destroy(success_dialog);
-        return;
     }
-
-    // 如果用户选择了否，关闭对话框
-    gtk_widget_destroy(confirm_dialog);
+    else
+    {
+        // 如果用户选择了否，关闭对话框
+        gtk_widget_destroy(confirm_dialog);
+    }
 }
+
 
 // 将Delete按键映射为delete_button的回调函数
 gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
@@ -839,9 +816,10 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
                                                                 "Conflict with existing rules!");
             gtk_dialog_run(GTK_DIALOG(conflict_dialog));
             gtk_widget_destroy(conflict_dialog);
-
+            // 清除之前的选择
+            gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(treeview));
             // 滚动到冲突的行
-            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 0.0, 0.0);
+            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 1.0, 0.0);
             // 选中冲突的行
             gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), conflict_path);
             // 释放资源
@@ -866,15 +844,6 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
                                                                  "Update database failed! Please check permissions!");
                 gtk_dialog_run(GTK_DIALOG(error_dialog));
                 gtk_widget_destroy(error_dialog);
-                // 释放资源
-                // g_free(protocol);
-                // g_free(srcip);
-                // g_free(dstip);
-                // g_free(srcport);
-                // g_free(dstport);
-                // g_free(stime);
-                // g_free(etime);
-                // g_free(remarks);
                 return;
             }
             // 修改treeview中的记录
@@ -889,15 +858,6 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
                                8, block,
                                9, remarks,
                                -1);
-            // 释放资源
-            // g_free(protocol);
-            // g_free(srcip);
-            // g_free(dstip);
-            // g_free(srcport);
-            // g_free(dstport);
-            // g_free(stime);
-            // g_free(etime);
-            // g_free(remarks);
 
             // 提示用户编辑成功
             GtkWidget *success_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),

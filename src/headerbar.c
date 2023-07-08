@@ -31,7 +31,7 @@ void on_about_button_clicked(GtkButton *button, gpointer data)
     GtkWidget *about_dialog = GTK_WIDGET(gtk_builder_get_object(builder, "about_dialog"));
     // 获取嵌入的图标文件路径
     const gchar *icon_path = "/img/versaguard-logo.png";
-    // 创建图标
+    // 设置logo
     GdkPixbuf *logo_pixbuf = gdk_pixbuf_new_from_resource(icon_path, NULL);
     // 设置图标为 About 对话框的 Logo
     gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(about_dialog), logo_pixbuf);
@@ -48,3 +48,14 @@ void on_about_button_clicked(GtkButton *button, gpointer data)
     // 启用主窗口
     gtk_widget_set_sensitive(GTK_WIDGET(data), TRUE);
 }
+
+// 应用程序数据目录按钮回调函数
+void on_data_dir_button_clicked(GtkButton *button, gpointer data)
+{
+    // 获取应用程序数据目录
+    char data_dir[256];
+    snprintf(data_dir, sizeof(data_dir), "file://%s/%s", g_get_home_dir(), APP_DIR);
+    // 打开文件管理器
+    gtk_show_uri_on_window(NULL, data_dir, GDK_CURRENT_TIME, NULL);
+}
+

@@ -86,7 +86,7 @@
                     <property name="hscroll-policy">natural</property>
                     <property name="vscroll-policy">natural</property>
                     <property name="model">liststore</property>
-                    <property name="search-column">10</property>
+                    <property name="search-column">9</property>
                     <property name="enable-grid-lines">both</property>
                     <signal name="row-activated" handler="on_treeview_row_activated" object="liststore" swapped="no"/>
                     <child internal-child="selection">
@@ -392,11 +392,11 @@
                 <property name="vexpand">True</property>
                 <property name="shadow-type">in</property>
                 <child>
-                  <object class="GtkTreeView" id="log_treeview">
+                  <object class="GtkTreeView" id="logs_treeview">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection"/>
+                      <object class="GtkTreeSelection" id="logs_selection"/>
                     </child>
                   </object>
                 </child>
@@ -407,13 +407,20 @@
               </packing>
             </child>
             <child>
-              <object class="GtkMenuButton">
+              <object class="GtkSearchBar" id="logs_searchbar">
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="focus-on-click">False</property>
-                <property name="receives-default">True</property>
+                <property name="can-focus">False</property>
+                <property name="search-mode-enabled">True</property>
                 <child>
-                  <placeholder/>
+                  <object class="GtkSearchEntry" id="log_searchentry">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="primary-icon-name">edit-find-symbolic</property>
+                    <property name="primary-icon-activatable">False</property>
+                    <property name="primary-icon-sensitive">False</property>
+                    <property name="placeholder-text" translatable="yes">Search here...</property>
+                  </object>
                 </child>
               </object>
               <packing>
@@ -475,6 +482,24 @@
       </object>
       <packing>
         <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="data_dir_button">
+        <property name="visible">True</property>
+        <property name="can-focus">True</property>
+        <property name="receives-default">True</property>
+        <signal name="clicked" handler="on_data_dir_button_clicked" swapped="no"/>
+        <child>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="icon-name">file-manager</property>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="position">2</property>
       </packing>
     </child>
   </object>
