@@ -336,7 +336,7 @@
                 <property name="editable">False</property>
                 <property name="secondary-icon-name">text-editor-symbolic</property>
                 <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
-                <property name="placeholder-text" translatable="yes">0-65535, blank is all</property>
+                <property name="placeholder-text" translatable="yes">1-65535, blank is all</property>
                 <property name="input-purpose">number</property>
                 <signal name="icon-press" handler="on_port_entry_icon_press" object="port_popover" swapped="no"/>
                 <signal name="key-press-event" handler="on_key_press_event_port" object="port_popover" swapped="no"/>
@@ -353,7 +353,7 @@
                 <property name="editable">False</property>
                 <property name="secondary-icon-name">text-editor-symbolic</property>
                 <property name="secondary-icon-tooltip-text" translatable="yes">Edit</property>
-                <property name="placeholder-text" translatable="yes">0-65535, blank is all</property>
+                <property name="placeholder-text" translatable="yes">1-65535, blank is all</property>
                 <property name="input-purpose">number</property>
                 <signal name="icon-press" handler="on_port_entry_icon_press" object="port_popover" swapped="no"/>
                 <signal name="key-press-event" handler="on_key_press_event_port" object="port_popover" swapped="no"/>
@@ -667,6 +667,7 @@
     <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="port_adj">
+    <property name="lower">1</property>
     <property name="upper">65535</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>

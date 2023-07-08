@@ -27,6 +27,7 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
         {
             // 导入数据库
             int count = importData(filename, GTK_LIST_STORE(data));
+
             // 关闭对话框
             gtk_widget_destroy(dialog);
             if (!count)
@@ -126,7 +127,7 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
             GtkTreeView *treeview = GTK_TREE_VIEW(data);
             // 清除之前的选择
             gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(treeview));
-            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 1.0, 0.0);
+            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, FALSE, 1.0, 0.0);
             // 高亮冲突的行
             gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), conflict_path);
 
@@ -161,6 +162,15 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
                                                             "Add successful!");
             gtk_dialog_run(GTK_DIALOG(success_dialog));
             gtk_widget_destroy(success_dialog);
+
+            // 滚动到新添加的行（最后一行）
+            GtkTreeView *treeview = GTK_TREE_VIEW(data);
+            GtkTreePath *path = gtk_tree_path_new_from_indices(gtk_tree_model_iter_n_children(gtk_tree_view_get_model(treeview), NULL) - 1, -1);
+            gtk_tree_view_scroll_to_cell(treeview, path, NULL, FALSE, 1.0, 0.0);
+            // 高亮新添加的行
+            gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), path);
+            gtk_tree_path_free(path);
+
         }
     }
 
@@ -819,7 +829,7 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
             // 清除之前的选择
             gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(treeview));
             // 滚动到冲突的行
-            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, TRUE, 1.0, 0.0);
+            gtk_tree_view_scroll_to_cell(treeview, conflict_path, NULL, FALSE, 1.0, 0.0);
             // 选中冲突的行
             gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), conflict_path);
             // 释放资源
