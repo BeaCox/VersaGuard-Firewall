@@ -5,27 +5,26 @@
     char *protocol;
     char *src_ip;      // 源IP
     char *dst_ip;      // 目的IP
-    int src_port;      // 源端口
-    int dst_port;      // 目的端口
+    char *src_port;      // 源端口
+    char *dst_port;      // 目的端口
     char *start_time;  // 开始时同
     char *end_time;    // 结束时同
-    bool action;       // 动作（0拦截,1通过）
+    int action;       // 动作（0拦截,1通过）
 ```
-规则与规则间、规则中的每一项之间以换行符'\n'作为间隔
+规则与规则间以换行符'\n'作为间隔，规则中的每一项之间以空格' '间隔。
 # 输出
-结构体
+一个元素为下面结构体的数组，储存了规则的信息。规则数量存放在num_rules中。
 ```
 struct rule
 {
     int id;
     char *protocol;
-    int protocol_type; // 0为tcp，1为udp，2为ping
     char *src_ip;      // 源IP
     char *dst_ip;      // 目的IP
-    int src_port;      // 源端口
-    int dst_port;      // 目的端口
+    char *src_port;      // 源端口
+    char *dst_port;      // 目的端口
     char *start_time;  // 开始时同
     char *end_time;    // 结束时同
-    bool action;       // 动作（0拦截,1通过）
+    int action;       // 动作（0拦截,1通过）
 };
 ```
