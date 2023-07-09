@@ -10,7 +10,8 @@
 #define BUF_SIZE 256
 #define MAX_RULES 10
 
-struct firewall_rule {
+struct firewall_rule
+{
     int id;
     char *protocol;
     char *src_ip;
@@ -26,6 +27,105 @@ static char device_buffer[BUF_SIZE];
 static struct firewall_rule rules[MAX_RULES];
 static int num_rules = 0;
 
+static void parse_rules(void)
+{
+    char *pos;
+    char *rule_str;
+    const char *delim = " ";
+    char *endptr;
+    int i;
+    pos = device_buffer;
+
+    while ((rule_str = strsep(&pos, ";")) != NULL && num_rules < MAX_RULES)
+    {
+
+        char *token;
+        struct firewall_rule rule;
+        if (rule_str[0] == 0 || rule_str[1] == 0)
+            break;
+
+        memset(&rule, 0, sizeof(struct firewall_rule));
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 1\n");
+            return;
+        }
+        rule.id = (int)simple_strtol(token, &endptr, 10);
+
+        if (*endptr != '\0')
+        {
+            pr_err("Invalid rule format 11\n");
+            return;
+        }
+        token = strsep(&rule_str, delim);
+
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 2\n");
+            return;
+        }
+
+        rule.protocol = kstrdup(token, GFP_KERNEL);
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 3\n");
+            return;
+        }
+        rule.src_ip = kstrdup(token, GFP_KERNEL);
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 4\n");
+            return;
+        }
+        rule.dst_ip = kstrdup(token, GFP_KERNEL);
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 5\n");
+            return;
+        }
+        rule.src_port = kstrdup(token, GFP_KERNEL);
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 6\n");
+            return;
+        }
+        rule.dst_port = kstrdup(token, GFP_KERNEL);
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 7\n");
+            return;
+        }
+        rule.start_time = kstrdup(token, GFP_KERNEL);
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 8\n");
+            return;
+        }
+        rule.end_time = kstrdup(token, GFP_KERNEL);
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 9\n");
+            return;
+        }
+        rule.action = (int)simple_strtol(token, &endptr, 10);
+        if (*endptr != '\0')
+        {
+            pr_err("Invalid rule format 99\n");
+            return;
+        }
+
+        rules[num_rules++] = rule;
+    }
+}
+
 static ssize_t my_read(struct file *file, char __user *user_buffer, size_t count, loff_t *ppos)
 {
     return simple_read_from_buffer(user_buffer, count, ppos, device_buffer, BUF_SIZE);
@@ -33,7 +133,16 @@ static ssize_t my_read(struct file *file, char __user *user_buffer, size_t count
 
 static ssize_t my_write(struct file *file, const char __user *user_buffer, size_t count, loff_t *ppos)
 {
-    return simple_write_to_buffer(device_buffer, BUF_SIZE, ppos, user_buffer, count);
+    ssize_t retval = simple_write_to_buffer(device_buffer, BUF_SIZE, ppos, user_buffer, count);
+    if (retval > 0)
+    {
+        // 解析规则
+        memset(rules, 0, sizeof(rules));
+        num_rules = 0;
+
+        parse_rules();
+    }
+    return retval;
 }
 
 static const struct file_operations my_fops = {
@@ -48,64 +157,13 @@ static struct miscdevice my_misc_device = {
     .fops = &my_fops,
 };
 
-static void parse_rules(void)
-{
-    char *pos;
-    char *rule_str;
-    const char *delim = " ";
-    char *endptr;
-
-    pos = device_buffer;
-    while ((rule_str = strsep(&pos, "\n")) != NULL && num_rules < MAX_RULES) {
-        char *token;
-        struct firewall_rule rule;
-
-        memset(&rule, 0, sizeof(struct firewall_rule));
-        token = strsep(&rule_str, delim);
-        if (token == NULL) {
-            pr_err("Invalid rule format\n");
-            return;
-        }
-        rule.id = (int)simple_strtol(token, &endptr, 10);
-        if (*endptr != '\0') {
-            pr_err("Invalid rule format\n");
-            return;
-        }
-        token = strsep(&rule_str, delim);
-        rule.protocol = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        rule.src_ip = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        rule.dst_ip = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        rule.src_port = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        rule.dst_port = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        rule.start_time = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        rule.end_time = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        if (token == NULL) {
-            pr_err("Invalid rule format\n");
-            return;
-        }
-        rule.action = (int)simple_strtol(token, &endptr, 10);
-        if (*endptr != '\0') {
-            pr_err("Invalid rule format\n");
-            return;
-        }
-
-        rules[num_rules++] = rule;
-    }
-}
-
 static int __init my_module_init(void)
 {
     int ret;
 
     ret = misc_register(&my_misc_device);
-    if (ret) {
+    if (ret)
+    {
         pr_err("Failed to register misc device\n");
         return ret;
     }
@@ -115,8 +173,6 @@ static int __init my_module_init(void)
     // 初始化设备缓冲区
     memset(device_buffer, 0, sizeof(device_buffer));
 
-    parse_rules();
-
     return 0;
 }
 
@@ -124,7 +180,8 @@ static void __exit my_module_exit(void)
 {
     int i;
 
-    for (i = 0; i < num_rules; i++) {
+    for (i = 0; i < num_rules; i++)
+    {
         kfree(rules[i].protocol);
         kfree(rules[i].src_ip);
         kfree(rules[i].dst_ip);
