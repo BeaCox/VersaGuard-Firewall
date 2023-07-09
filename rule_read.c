@@ -21,6 +21,11 @@ struct firewall_rule
     char *start_time;
     char *end_time;
     int action;
+
+    char *start_day;
+    char *start_sec;
+    char *end_day;
+    char *end_sec;
 };
 
 static char device_buffer[BUF_SIZE];
@@ -95,32 +100,64 @@ static void parse_rules(void)
             return;
         }
         rule.dst_port = kstrdup(token, GFP_KERNEL);
+
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
             pr_err("Invalid rule format 7\n");
             return;
         }
-        rule.start_time = kstrdup(token, GFP_KERNEL);
+        rule.start_day = kstrdup(token, GFP_KERNEL);
+
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 77\n");
+            return;
+        }
+        rule.start_sec = kstrdup(token, GFP_KERNEL);
+
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
             pr_err("Invalid rule format 8\n");
             return;
         }
-        rule.end_time = kstrdup(token, GFP_KERNEL);
+        rule.end_day = kstrdup(token, GFP_KERNEL);
+
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format 88\n");
+            return;
+        }
+        rule.end_sec = kstrdup(token, GFP_KERNEL);
+
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
             pr_err("Invalid rule format 9\n");
             return;
         }
+
         rule.action = (int)simple_strtol(token, &endptr, 10);
         if (*endptr != '\0')
         {
             pr_err("Invalid rule format 99\n");
             return;
         }
+
+        rule.start_time = kmalloc(sizeof(char) * (strlen(rule.start_sec) + strlen(rule.start_day) + 10), GFP_KERNEL);
+        rule.start_time[0] = '\0'; // 初始化为空字符串
+        strlcpy(rule.start_time, rule.start_day, strlen(rule.start_sec) + strlen(rule.start_day) + 10);
+        strlcat(rule.start_time, " ", strlen(rule.start_sec) + strlen(rule.start_day) + 10);
+        strlcat(rule.start_time, rule.start_sec, strlen(rule.start_sec) + strlen(rule.start_day) + 10);
+
+        rule.end_time = kmalloc(sizeof(char) * (strlen(rule.end_sec) + strlen(rule.end_day) + 10), GFP_KERNEL);
+        rule.end_time[0] = '\0'; // 初始化为空字符串
+        strlcpy(rule.end_time, rule.end_day, strlen(rule.end_sec) + strlen(rule.end_day) + 10);
+        strlcat(rule.end_time, " ", strlen(rule.end_sec) + strlen(rule.end_day) + 10);
+        strlcat(rule.end_time, rule.end_sec, strlen(rule.end_sec) + strlen(rule.end_day) + 10);
 
         rules[num_rules++] = rule;
     }
@@ -194,6 +231,10 @@ static void __exit my_module_exit(void)
         kfree(rules[i].dst_port);
         kfree(rules[i].start_time);
         kfree(rules[i].end_time);
+        kfree(rules[i].start_day);
+        kfree(rules[i].end_sec);
+        kfree(rules[i].start_day);
+        kfree(rules[i].end_sec);
     }
 
     misc_deregister(&my_misc_device);
