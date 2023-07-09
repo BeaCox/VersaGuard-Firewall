@@ -124,6 +124,11 @@ static void parse_rules(void)
 
         rules[num_rules++] = rule;
     }
+    // for (i = 0; i < num_rules; i++)
+    // {
+        // pr_info("Rule %d: protocol=%s, src_ip=%s, dst_ip=%s, src_port=%s, dst_port=%s, start_time=%s, end_time=%s, action=%d\n",
+                // rules[i].id, rules[i].protocol, rules[i].src_ip, rules[i].dst_ip, rules[i].src_port, rules[i].dst_port, rules[i].start_time, rules[i].end_time, rules[i].action);
+    // }
 }
 
 static ssize_t my_read(struct file *file, char __user *user_buffer, size_t count, loff_t *ppos)
