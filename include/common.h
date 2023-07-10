@@ -22,6 +22,7 @@ typedef struct
 {
     int id; //规则序号
 	char *protocol; //协议类型：tcp，udp，icmp, all
+	char *interface; // 网络接口类型
 	char *src_ip; //源IP
 	char *dst_ip; //目的IP
 	char *src_port; //源端口
