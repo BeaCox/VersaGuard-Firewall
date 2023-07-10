@@ -9,10 +9,7 @@
 #include <linux/string.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
+#include <linux/timekeeping.h>
 
 #define IPADDRESS(addr)              \
     ((unsigned char *)&addr)[3],     \
@@ -227,35 +224,33 @@ static unsigned int nf_blockdstport_handler(void *priv, struct sk_buff *skb, con
     return NF_ACCEPT;
 }
 
-static unsigned int nf_blocktime_handler(void *priv, const struct nf_hook_state *state) // 时间
+static unsigned int nf_blocktime_handler(void *priv, const struct nf_hook_state *state)
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+
     char YMD[15] = {0};
     char HMS[10] = {0};
-    time_t current_time;
-    struct tm *now_time;
+    strftime(YMD, sizeof(YMD), "%F ", &result);
+    strftime(HMS, sizeof(HMS), "%T", &result);
 
-    char *cur_time = (char *)malloc(21 * sizeof(char));
-    time(&current_time);
-    now_time = localtime(&current_time);
-
-    strftime(YMD, sizeof(YMD), "%F ", now_time);
-    strftime(HMS, sizeof(HMS), "%T", now_time);
-
-    strncat(cur_time, YMD, 11);
+    char *cur_time = (char *)kmalloc(21 * sizeof(char), GFP_KERNEL);
+    strncpy(cur_time, YMD, 11);
     strncat(cur_time, HMS, 8);
 
-    bool result = is_time_between(cur_time);
-    if (result)
+    bool is_between = is_time_between(cur_time);
+    kfree(cur_time);
+
+    if (is_between)
     {
-        free(cur_time);
-        cur_time = NULL;
         return NF_ACCEPT;
     }
     else
     {
-        free(cur_time);
-        cur_time = NULL;
-        printk(KERN_INFO "Drop TIME \n");
+        printk(KERN_INFO "Drop TIME packet\n");
         return NF_DROP;
     }
 }
