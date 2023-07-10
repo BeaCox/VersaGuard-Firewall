@@ -6,14 +6,16 @@
 #include <linux/string.h>
 #include <linux/slab.h>
 
-#define DEVICE_NAME "firewall"
-#define BUF_SIZE 256
-#define MAX_RULES 10
+#define DEVICE_NAME "firewall" // 设备文件名称
+#define BUF_SIZE 1024          // 读取字符串的最大长度，应大于最大规则数*100
+#define MAX_RULES 10           // 最大规则数
 
 struct firewall_rule
 {
     int id;
     char *protocol;
+
+    int protocol_type;
     char *src_ip;
     char *dst_ip;
     char *src_port;
@@ -32,6 +34,7 @@ static char device_buffer[BUF_SIZE];
 static struct firewall_rule rules[MAX_RULES];
 static int num_rules = 0;
 
+// 将读取到的字符串解析并保存在结构体数组中
 static void parse_rules(void)
 {
     char *pos;
@@ -53,21 +56,21 @@ static void parse_rules(void)
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 1\n");
+            pr_err("Invalid rule format (Id)\n");
             return;
         }
         rule.id = (int)simple_strtol(token, &endptr, 10);
 
         if (*endptr != '\0')
         {
-            pr_err("Invalid rule format 11\n");
+            pr_err("Invalid rule format (Id_2)\n");
             return;
         }
         token = strsep(&rule_str, delim);
 
         if (token == NULL)
         {
-            pr_err("Invalid rule format 2\n");
+            pr_err("Invalid rule format (protocol)\n");
             return;
         }
 
@@ -75,21 +78,21 @@ static void parse_rules(void)
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 3\n");
+            pr_err("Invalid rule format (src_ip)\n");
             return;
         }
         rule.src_ip = kstrdup(token, GFP_KERNEL);
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 4\n");
+            pr_err("Invalid rule format (dst_ip)\n");
             return;
         }
         rule.dst_ip = kstrdup(token, GFP_KERNEL);
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 5\n");
+            pr_err("Invalid rule format (src)\n");
             return;
         }
         rule.src_port = kstrdup(token, GFP_KERNEL);
@@ -147,6 +150,18 @@ static void parse_rules(void)
             return;
         }
 
+        if (rule.protocol[0] == 't' && rule.protocol[1] == 'c' && rule.protocol[2] == 'p' && rule.protocol[3] == 0)
+            rule.protocol_type = 0;
+        else if (rule.protocol[0] == 'u' && rule.protocol[1] == 'd' && rule.protocol[2] == 'p' && rule.protocol[3] == 0)
+            rule.protocol_type = 1;
+        else if (rule.protocol[0] == 'i' && rule.protocol[1] == 'c' && rule.protocol[2] == 'm' && rule.protocol[3] == 'p' && rule.protocol[3] == 0)
+            rule.protocol_type = 2;
+        else
+        {
+            rule.protocol_type = -1; // 输入格式错误
+            pr_err("Invalid protocol format\n");
+            return;
+        }
         rule.start_time = kmalloc(sizeof(char) * (strlen(rule.start_sec) + strlen(rule.start_day) + 10), GFP_KERNEL);
         rule.start_time[0] = '\0'; // 初始化为空字符串
         strlcpy(rule.start_time, rule.start_day, strlen(rule.start_sec) + strlen(rule.start_day) + 10);
@@ -163,8 +178,8 @@ static void parse_rules(void)
     }
     // for (i = 0; i < num_rules; i++)
     // {
-        // pr_info("Rule %d: protocol=%s, src_ip=%s, dst_ip=%s, src_port=%s, dst_port=%s, start_time=%s, end_time=%s, action=%d\n",
-                // rules[i].id, rules[i].protocol, rules[i].src_ip, rules[i].dst_ip, rules[i].src_port, rules[i].dst_port, rules[i].start_time, rules[i].end_time, rules[i].action);
+    //     pr_info("Rule %d: protocol_type=%d, src_ip=%s, dst_ip=%s, src_port=%s, dst_port=%s, start_time=%s, end_time=%s, action=%d\n",
+    //             rules[i].id, rules[i].protocol_type, rules[i].src_ip, rules[i].dst_ip, rules[i].src_port, rules[i].dst_port, rules[i].start_time, rules[i].end_time, rules[i].action);
     // }
 }
 
@@ -187,18 +202,21 @@ static ssize_t my_write(struct file *file, const char __user *user_buffer, size_
     return retval;
 }
 
+// 字符设备文件操作结构体
 static const struct file_operations my_fops = {
     .owner = THIS_MODULE,
     .read = my_read,
     .write = my_write,
 };
 
+// 设备信息
 static struct miscdevice my_misc_device = {
     .minor = MISC_DYNAMIC_MINOR,
     .name = DEVICE_NAME,
     .fops = &my_fops,
 };
 
+// 初始化模块
 static int __init my_module_init(void)
 {
     int ret;
@@ -218,6 +236,7 @@ static int __init my_module_init(void)
     return 0;
 }
 
+// 模块注销
 static void __exit my_module_exit(void)
 {
     int i;
