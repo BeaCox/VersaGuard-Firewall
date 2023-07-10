@@ -72,7 +72,7 @@ void interaction(int op, sqlite3 *db)
             scanf("%s", field);
 
             // 检查输入的字段是否有效
-            if (strcmp(field, "ptc") != 0 && strcmp(field, "sip") != 0 && strcmp(field, "dip") != 0 &&
+            if (strcmp(field, "ptc") != 0 && strcmp(field, "if") != 0 && strcmp(field, "sip") != 0 && strcmp(field, "dip") != 0 &&
                 strcmp(field, "spt") != 0 && strcmp(field, "dpt") != 0 && strcmp(field, "stm") != 0 &&
                 strcmp(field, "etm") != 0 && strcmp(field, "act") != 0 && strcmp(field, "rmk") != 0) {
                 printf("\033[1;31m要修改的参数不存在。\033[0m\n");
@@ -91,6 +91,9 @@ void interaction(int op, sqlite3 *db)
                     strcpy(ruleToUpdate.protocol, value);
                 } else {printf("\033[1;31m输入的协议无效。\033[0m\n");return ;}
             }
+            else if (strcmp(field, "if") == 0) {
+                strcpy(ruleToUpdate.interface, value);
+            }
             else if (strcmp(field, "sip") == 0) {
                 if(isValidIPAddress(value)){
                     strcpy(ruleToUpdate.src_ip, value);
@@ -104,12 +107,12 @@ void interaction(int op, sqlite3 *db)
             else if (strcmp(field, "spt") == 0) {
                 if(isValidPort(value)){
                     strcpy(ruleToUpdate.src_port, value);
-                }else {printf("\033[1;31m输入的源端口无效，请输入0-65535之间的数字或回车。\033[0m\n"); exit(0);}
+                }else {printf("\033[1;31m输入的源端口无效。\033[0m\n"); exit(0);}
             }
             else if (strcmp(field, "dpt") == 0) {
                  if(isValidPort(value)){
                         strcpy(ruleToUpdate.dst_port, value);
-                } else {printf("\033[1;31m输入的目标端口无效，请输入0-65535之间的数字或回车。\033[0m\n");return ;}
+                } else {printf("\033[1;31m输入的目标端口无效。\033[0m\n");return ;}
             }
             else if (strcmp(field, "stm") == 0) {
                  if(!isValidDateTime(value)){
@@ -225,6 +228,10 @@ Rule getRuleFromUserInput()
         }
     }
     
+    printf("网络接口: ");
+    input = getInputString();
+    rule.interface = input;
+
     printf("源 IP 地址: ");
     while (1) 
     {

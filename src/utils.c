@@ -39,14 +39,15 @@ Rule findRuleById(sqlite3 *db, int ruleId)
         rule.id = sqlite3_column_int(stmt, 0);
 
         rule.protocol = strdup((const char*)sqlite3_column_text(stmt, 1));
-        rule.src_ip = strdup((const char*)sqlite3_column_text(stmt, 2));
-        rule.dst_ip = strdup((const char*)sqlite3_column_text(stmt, 3));
-        rule.src_port = strdup((const char*)sqlite3_column_text(stmt, 4));
-        rule.dst_port = strdup((const char*)sqlite3_column_text(stmt, 5));
-        rule.start_time = strdup((const char*)sqlite3_column_text(stmt, 6));
-        rule.end_time = strdup((const char*)sqlite3_column_text(stmt, 7));
-        rule.action = sqlite3_column_int(stmt, 8);
-        rule.remarks = strdup((const char*)sqlite3_column_text(stmt, 9));
+        rule.interface = strdup((const char*)sqlite3_column_text(stmt, 2));
+        rule.src_ip = strdup((const char*)sqlite3_column_text(stmt, 3));
+        rule.dst_ip = strdup((const char*)sqlite3_column_text(stmt, 4));
+        rule.src_port = strdup((const char*)sqlite3_column_text(stmt, 5));
+        rule.dst_port = strdup((const char*)sqlite3_column_text(stmt, 6));
+        rule.start_time = strdup((const char*)sqlite3_column_text(stmt, 7));
+        rule.end_time = strdup((const char*)sqlite3_column_text(stmt, 8));
+        rule.action = sqlite3_column_int(stmt, 9);
+        rule.remarks = strdup((const char*)sqlite3_column_text(stmt, 10));
         
     }
 
@@ -61,6 +62,7 @@ bool isRuleEmpty(const Rule* rule)
 {
     if (rule->id == 0 &&
         rule->protocol == NULL &&
+        rule->interface == NULL &&
         rule->src_ip == NULL &&
         rule->dst_ip == NULL &&
         rule->src_port == 0 &&
@@ -80,7 +82,7 @@ bool isRuleEmpty(const Rule* rule)
 bool isRuleExists(sqlite3* db, const Rule* rule) 
 {
     char sql[512];
-    sprintf(sql, "SELECT COUNT(*) FROM rules WHERE protocol = ? AND src_ip = ? AND dst_ip = ? "
+    sprintf(sql, "SELECT COUNT(*) FROM rules WHERE protocol = ? AND interface = ? AND src_ip = ? AND dst_ip = ? "
                  "AND src_port = ? AND dst_port = ? AND start_time = ? AND end_time = ?");
 
     sqlite3_stmt* statement;
@@ -92,12 +94,13 @@ bool isRuleExists(sqlite3* db, const Rule* rule)
 
     // 绑定参数的值
     sqlite3_bind_text(statement, 1, rule->protocol, -1, SQLITE_STATIC);
-    sqlite3_bind_text(statement, 2, rule->src_ip, -1, SQLITE_STATIC);
-    sqlite3_bind_text(statement, 3, rule->dst_ip, -1, SQLITE_STATIC);
-    sqlite3_bind_text(statement, 4, rule->src_port, -1, SQLITE_STATIC);
-    sqlite3_bind_text(statement, 5, rule->dst_port, -1, SQLITE_STATIC);
-    sqlite3_bind_text(statement, 6, rule->start_time, -1, SQLITE_STATIC);
-    sqlite3_bind_text(statement, 7, rule->end_time, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 2, rule->interface, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 3, rule->src_ip, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 4, rule->dst_ip, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 5, rule->src_port, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 6, rule->dst_port, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 7, rule->start_time, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 8, rule->end_time, -1, SQLITE_STATIC);
 
     int count = 0;
     if (sqlite3_step(statement) == SQLITE_ROW) {
@@ -133,6 +136,11 @@ bool isValidProtocol(const char* protocol)
 // 验证IP的有效性
 bool isValidIPAddress(const char* ip) 
 {
+    // 检查ip字符串是否为空
+    if (strcmp(ip, "") == 0) {
+        return true;
+    }
+
     // 正则表达式，匹配 IPv4 地址
     const char* pattern = "^([0-9]{1,3}\\.){3}[0-9]{1,3}$";
     
@@ -174,6 +182,11 @@ bool isValidPort(const char* port)
 // 验证时间的有效性
 bool isValidDateTime(const char* datetime) 
 {
+    // 检查时间字符串是否为空
+    if (strcmp(datetime, "") == 0) {
+        return true;
+    }
+
     // YYYY-MM-DD HH:MM:SS
     const char* pattern = "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$";
     
@@ -215,6 +228,11 @@ bool isValidDateTime(const char* datetime)
 // 验证结束时间是否晚于开始时间
 bool isEndLaterThanStart(const char* start, const char* end) 
 {
+    // 检查时间字符串是否为空
+    if (strcmp(start, "") == 0 || strcmp(end, "") == 0) {
+        return true;
+    }
+    
     // 将开始时间和结束时间解析为日期时间对象
     struct tm tmStart, tmEnd;
     memset(&tmStart, 0, sizeof(struct tm));

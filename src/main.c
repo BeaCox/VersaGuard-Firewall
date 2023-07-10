@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
         const char *create_table_sql = "CREATE TABLE rules ("
                                         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                                         "protocol TEXT,"
+                                        "interface TEXT,"
                                         "src_ip TEXT,"
                                         "dst_ip TEXT,"
                                         "src_port TEXT,"
