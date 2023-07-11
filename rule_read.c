@@ -9,30 +9,35 @@
 #define DEVICE_NAME "firewall" // 设备文件名称
 #define BUF_SIZE 1024          // 读取字符串的最大长度，应大于最大规则数*100
 #define MAX_RULES 10           // 最大规则数
-
+// #define deinfo(s) ((s[0]==0)?"?":s)
 struct firewall_rule
 {
+    int protocol_type;
+    char *dev_rule;
+    char *ip_saddr_rule;
+    char *ip_daddr_rule;
+    char *deny_src_port;
+    char *deny_dst_port;
+    char *time_start_rule;
+    char *time_end_rule;
+
     int id;
     char *protocol;
-
-    int protocol_type;
-    char *src_ip;
-    char *dst_ip;
-    char *src_port;
-    char *dst_port;
-    char *start_time;
-    char *end_time;
-    int action;
-
     char *start_day;
     char *start_sec;
     char *end_day;
     char *end_sec;
+    int action;
 };
 
 static char device_buffer[BUF_SIZE];
 static struct firewall_rule rules[MAX_RULES];
 static int num_rules = 0;
+
+inline char * change(char *s) {
+    if(s[0]==0) return "?";
+    else return s;
+}
 
 // 将读取到的字符串解析并保存在结构体数组中
 static void parse_rules(void)
@@ -40,7 +45,6 @@ static void parse_rules(void)
     char *pos;
     char *rule_str;
     const char *delim = " ";
-    char *endptr;
     int i;
     pos = device_buffer;
 
@@ -51,63 +55,70 @@ static void parse_rules(void)
         struct firewall_rule rule;
         if (rule_str[0] == 0 || rule_str[1] == 0)
             break;
-
         memset(&rule, 0, sizeof(struct firewall_rule));
-        token = strsep(&rule_str, delim);
-        if (token == NULL)
-        {
-            pr_err("Invalid rule format (Id)\n");
-            return;
-        }
-        rule.id = (int)simple_strtol(token, &endptr, 10);
 
-        if (*endptr != '\0')
-        {
-            pr_err("Invalid rule format (Id_2)\n");
-            return;
-        }
         token = strsep(&rule_str, delim);
-
         if (token == NULL)
         {
             pr_err("Invalid rule format (protocol)\n");
             return;
         }
-
         rule.protocol = kstrdup(token, GFP_KERNEL);
+
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format (src_ip)\n");
+            pr_err("Invalid rule format (dev_rule)\n");
             return;
         }
-        rule.src_ip = kstrdup(token, GFP_KERNEL);
+        rule.dev_rule = kstrdup(token, GFP_KERNEL);
+        if (rule.dev_rule[0] == '?' && rule.dev_rule[1] == 0)
+        rule.dev_rule[0]=0;
+
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format (dst_ip)\n");
+            pr_err("Invalid rule format (ip_saddr_rule)\n");
             return;
         }
-        rule.dst_ip = kstrdup(token, GFP_KERNEL);
+        rule.ip_saddr_rule = kstrdup(token, GFP_KERNEL);
+        if (rule.ip_saddr_rule[0] == '?' && rule.ip_saddr_rule[1] == 0)
+        rule.ip_saddr_rule[0]=0;
+
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format (ip_daddr_rule)\n");
+            return;
+        }
+        rule.ip_daddr_rule = kstrdup(token, GFP_KERNEL);
+        if (rule.ip_daddr_rule[0] == '?' && rule.ip_daddr_rule[1] == 0)
+        rule.ip_daddr_rule[0]=0;
+
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
             pr_err("Invalid rule format (src)\n");
             return;
         }
-        rule.src_port = kstrdup(token, GFP_KERNEL);
-        token = strsep(&rule_str, delim);
-        if (token == NULL)
-        {
-            pr_err("Invalid rule format 6\n");
-            return;
-        }
-        rule.dst_port = kstrdup(token, GFP_KERNEL);
+        rule.deny_src_port = kstrdup(token, GFP_KERNEL);
+        if (rule.deny_src_port[0] == '?' && rule.deny_src_port[1] == 0)
+        rule.deny_src_port[0]=0;
 
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 7\n");
+            pr_err("Invalid rule format (dst)\n");
+            return;
+        }
+        rule.deny_dst_port = kstrdup(token, GFP_KERNEL);
+        if (rule.deny_dst_port[0] == '?' && rule.deny_dst_port[1] == 0)
+        rule.deny_dst_port[0]=0;
+
+        token = strsep(&rule_str, delim);
+        if (token == NULL)
+        {
+            pr_err("Invalid rule format (s_day)\n");
             return;
         }
         rule.start_day = kstrdup(token, GFP_KERNEL);
@@ -115,7 +126,7 @@ static void parse_rules(void)
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 77\n");
+            pr_err("Invalid rule format (s_sec)\n");
             return;
         }
         rule.start_sec = kstrdup(token, GFP_KERNEL);
@@ -123,7 +134,7 @@ static void parse_rules(void)
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 8\n");
+            pr_err("Invalid rule format (e_day)\n");
             return;
         }
         rule.end_day = kstrdup(token, GFP_KERNEL);
@@ -131,30 +142,19 @@ static void parse_rules(void)
         token = strsep(&rule_str, delim);
         if (token == NULL)
         {
-            pr_err("Invalid rule format 88\n");
+            pr_err("Invalid rule format (e_sec)\n");
             return;
         }
         rule.end_sec = kstrdup(token, GFP_KERNEL);
 
-        token = strsep(&rule_str, delim);
-        if (token == NULL)
-        {
-            pr_err("Invalid rule format 9\n");
-            return;
-        }
-
-        rule.action = (int)simple_strtol(token, &endptr, 10);
-        if (*endptr != '\0')
-        {
-            pr_err("Invalid rule format 99\n");
-            return;
-        }
-
-        if (rule.protocol[0] == 't' && rule.protocol[1] == 'c' && rule.protocol[2] == 'p' && rule.protocol[3] == 0)
+        // 将protocol类型转化成int编号
+        if (rule.protocol[0] == '?' && rule.protocol[1] == 0)
+            rule.protocol_type = 3;
+        else if (rule.protocol[0] == 't' && rule.protocol[1] == 'c' && rule.protocol[2] == 'p' && rule.protocol[3] == 0)
             rule.protocol_type = 0;
         else if (rule.protocol[0] == 'u' && rule.protocol[1] == 'd' && rule.protocol[2] == 'p' && rule.protocol[3] == 0)
             rule.protocol_type = 1;
-        else if (rule.protocol[0] == 'i' && rule.protocol[1] == 'c' && rule.protocol[2] == 'm' && rule.protocol[3] == 'p' && rule.protocol[3] == 0)
+        else if (rule.protocol[0] == 'i' && rule.protocol[1] == 'c' && rule.protocol[2] == 'm' && rule.protocol[3] == 'p' && rule.protocol[4] == 0)
             rule.protocol_type = 2;
         else
         {
@@ -162,25 +162,35 @@ static void parse_rules(void)
             pr_err("Invalid protocol format\n");
             return;
         }
-        rule.start_time = kmalloc(sizeof(char) * (strlen(rule.start_sec) + strlen(rule.start_day) + 10), GFP_KERNEL);
-        rule.start_time[0] = '\0'; // 初始化为空字符串
-        strlcpy(rule.start_time, rule.start_day, strlen(rule.start_sec) + strlen(rule.start_day) + 10);
-        strlcat(rule.start_time, " ", strlen(rule.start_sec) + strlen(rule.start_day) + 10);
-        strlcat(rule.start_time, rule.start_sec, strlen(rule.start_sec) + strlen(rule.start_day) + 10);
 
-        rule.end_time = kmalloc(sizeof(char) * (strlen(rule.end_sec) + strlen(rule.end_day) + 10), GFP_KERNEL);
-        rule.end_time[0] = '\0'; // 初始化为空字符串
-        strlcpy(rule.end_time, rule.end_day, strlen(rule.end_sec) + strlen(rule.end_day) + 10);
-        strlcat(rule.end_time, " ", strlen(rule.end_sec) + strlen(rule.end_day) + 10);
-        strlcat(rule.end_time, rule.end_sec, strlen(rule.end_sec) + strlen(rule.end_day) + 10);
+        // 将时间字符串拼接为正确格式
+        rule.time_start_rule = kmalloc(sizeof(char) * (strlen(rule.start_sec) + strlen(rule.start_day) + 10), GFP_KERNEL);
+        rule.time_start_rule[0] = '\0'; // 初始化为空字符串
+        strlcpy(rule.time_start_rule, rule.start_day, strlen(rule.start_sec) + strlen(rule.start_day) + 10);
+        strlcat(rule.time_start_rule, " ", strlen(rule.start_sec) + strlen(rule.start_day) + 10);
+        strlcat(rule.time_start_rule, rule.start_sec, strlen(rule.start_sec) + strlen(rule.start_day) + 10);
+
+        rule.time_end_rule = kmalloc(sizeof(char) * (strlen(rule.end_sec) + strlen(rule.end_day) + 10), GFP_KERNEL);
+        rule.time_end_rule[0] = '\0'; // 初始化为空字符串
+        strlcpy(rule.time_end_rule, rule.end_day, strlen(rule.end_sec) + strlen(rule.end_day) + 10);
+        strlcat(rule.time_end_rule, " ", strlen(rule.end_sec) + strlen(rule.end_day) + 10);
+        strlcat(rule.time_end_rule, rule.end_sec, strlen(rule.end_sec) + strlen(rule.end_day) + 10);
 
         rules[num_rules++] = rule;
     }
-    // for (i = 0; i < num_rules; i++)
-    // {
-    //     pr_info("Rule %d: protocol_type=%d, src_ip=%s, dst_ip=%s, src_port=%s, dst_port=%s, start_time=%s, end_time=%s, action=%d\n",
-    //             rules[i].id, rules[i].protocol_type, rules[i].src_ip, rules[i].dst_ip, rules[i].src_port, rules[i].dst_port, rules[i].start_time, rules[i].end_time, rules[i].action);
-    // }
+
+    // 打印读取到的信息到日志
+    for (i = 0; i < num_rules; i++)
+    {
+        // 有缺省是直接打印空字符串，有点问题
+        // pr_info("Rule%d: protocol_type=%d, dev_rule=%s, ip_saddr_rule=%s, ip_daddr_rule=%s, deny_src_port=%s, deny_dst_port=%s, time_start_rule=%s, time_end_rule=%s",
+        //         i + 1, rules[i].protocol_type, rules[i].dev_rule, rules[i].ip_saddr_rule, rules[i].ip_daddr_rule, rules[i].deny_src_port, rules[i].deny_dst_port, rules[i].time_start_rule, rules[i].time_end_rule);
+    
+        // 有缺省打印'？'，能正常打印
+        pr_info("Rule%d: protocol_type=%d, dev_rule=%s, ip_saddr_rule=%s, ip_daddr_rule=%s, deny_src_port=%s, deny_dst_port=%s, time_start_rule=%s, time_end_rule=%s",
+                i + 1, rules[i].protocol_type, change(rules[i].dev_rule), change(rules[i].ip_saddr_rule), change(rules[i].ip_daddr_rule), change(rules[i].deny_src_port),change( rules[i].deny_dst_port), change(rules[i].time_start_rule), change(rules[i].time_end_rule));
+    
+    }
 }
 
 static ssize_t my_read(struct file *file, char __user *user_buffer, size_t count, loff_t *ppos)
@@ -244,12 +254,13 @@ static void __exit my_module_exit(void)
     for (i = 0; i < num_rules; i++)
     {
         kfree(rules[i].protocol);
-        kfree(rules[i].src_ip);
-        kfree(rules[i].dst_ip);
-        kfree(rules[i].src_port);
-        kfree(rules[i].dst_port);
-        kfree(rules[i].start_time);
-        kfree(rules[i].end_time);
+        kfree(rules[i].dev_rule);
+        kfree(rules[i].ip_saddr_rule);
+        kfree(rules[i].ip_daddr_rule);
+        kfree(rules[i].deny_src_port);
+        kfree(rules[i].deny_dst_port);
+        kfree(rules[i].time_start_rule);
+        kfree(rules[i].time_end_rule);
         kfree(rules[i].start_day);
         kfree(rules[i].end_sec);
         kfree(rules[i].start_day);
