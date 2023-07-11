@@ -11,6 +11,7 @@
     <property name="window-position">center</property>
     <property name="destroy-with-parent">True</property>
     <property name="type-hint">normal</property>
+    <signal name="key-press-event" handler="on_edit_dialog_key_press_event" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkBox" id="box_edit">
         <property name="can-focus">False</property>
@@ -139,7 +140,7 @@
           </packing>
         </child>
         <child>
-          <!-- n-columns=2 n-rows=9 -->
+          <!-- n-columns=2 n-rows=10 -->
           <object class="GtkGrid" id="grid_edit">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
@@ -181,7 +182,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">1</property>
+                <property name="top-attach">2</property>
               </packing>
             </child>
             <child>
@@ -198,7 +199,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">2</property>
+                <property name="top-attach">3</property>
               </packing>
             </child>
             <child>
@@ -215,7 +216,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">3</property>
+                <property name="top-attach">4</property>
               </packing>
             </child>
             <child>
@@ -232,7 +233,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">4</property>
+                <property name="top-attach">5</property>
               </packing>
             </child>
             <child>
@@ -249,7 +250,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">5</property>
+                <property name="top-attach">6</property>
               </packing>
             </child>
             <child>
@@ -266,7 +267,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">6</property>
+                <property name="top-attach">7</property>
               </packing>
             </child>
             <child>
@@ -283,7 +284,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">7</property>
+                <property name="top-attach">8</property>
               </packing>
             </child>
             <child>
@@ -300,7 +301,7 @@
               </object>
               <packing>
                 <property name="left-attach">0</property>
-                <property name="top-attach">8</property>
+                <property name="top-attach">9</property>
               </packing>
             </child>
             <child>
@@ -312,7 +313,7 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">8</property>
+                <property name="top-attach">9</property>
               </packing>
             </child>
             <child>
@@ -326,7 +327,7 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">7</property>
+                <property name="top-attach">8</property>
               </packing>
             </child>
             <child>
@@ -343,7 +344,7 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">4</property>
+                <property name="top-attach">5</property>
               </packing>
             </child>
             <child>
@@ -360,7 +361,7 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">3</property>
+                <property name="top-attach">4</property>
               </packing>
             </child>
             <child>
@@ -376,7 +377,7 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">2</property>
+                <property name="top-attach">3</property>
               </packing>
             </child>
             <child>
@@ -409,7 +410,7 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">5</property>
+                <property name="top-attach">6</property>
               </packing>
             </child>
             <child>
@@ -425,7 +426,7 @@
               </object>
               <packing>
                 <property name="left-attach">1</property>
-                <property name="top-attach">6</property>
+                <property name="top-attach">7</property>
               </packing>
             </child>
             <child>
@@ -438,6 +439,35 @@
                 <property name="placeholder-text" translatable="yes">blank is all</property>
                 <signal name="icon-press" handler="on_ip_entry_icon_press" object="ip_popover" swapped="no"/>
                 <signal name="key-press-event" handler="on_key_press_event_ip" object="ip_popover" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="label_interface">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="label" translatable="yes">Interface</property>
+                <attributes>
+                  <attribute name="font-desc" value="Noto Sans Mono Bold 10"/>
+                  <attribute name="weight" value="bold"/>
+                  <attribute name="scale" value="1.3999999999999999"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="left-attach">0</property>
+                <property name="top-attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entry_interface">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="max-length">50</property>
+                <property name="placeholder-text" translatable="yes">blank is all</property>
               </object>
               <packing>
                 <property name="left-attach">1</property>

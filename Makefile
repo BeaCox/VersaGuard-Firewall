@@ -5,8 +5,8 @@ BUILD_DIR = build
 BIN_DIR = bin
 
 # 指定源文件和头文件
-SOURCES = src/main.c src/database.c src/headerbar.c src/core_func.c src/utils.c src/glade.c src/img.c src/css.c
-HEADERS = include/database.h include/headerbar.h include/core_func.h include/utils.h
+SOURCES = src/main.c src/database.c src/headerbar.c src/core_func.c src/utils.c src/logs.c src/glade.c src/img.c src/css.c
+HEADERS = include/database.h include/headerbar.h include/core_func.h include/utils.h include/logs.h
 
 # 生成目标文件和资源文件的规则
 OBJECTS = $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(SOURCES))

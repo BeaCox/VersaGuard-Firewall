@@ -79,6 +79,7 @@ void on_import_button_clicked(GtkButton *button, gpointer data)
     gtk_widget_destroy(dialog);
 }
 
+// 添加按钮回调函数
 void on_add_button_clicked(GtkButton *button, gpointer data)
 {
     // 从glade文件中获取edit对话框
@@ -101,6 +102,7 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
         // 获取entry中的内容
         // protocol的内容从comboboxtext中获取
         gchar *protocol = (gchar *)gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "combox_protocol")));
+        gchar *interface = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_interface")));
         gchar *srcip = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcip")));
         gchar *dstip = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_dstip")));
         gchar *srcport = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcport")));
@@ -112,7 +114,7 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
         gchar *remarks = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_remarks")));
 
         // 检查是否有冲突
-        GtkTreePath *conflict_path = checkConflict(liststore, protocol, srcip, dstip, srcport, dstport, stime, etime, NULL);
+        GtkTreePath *conflict_path = checkConflict(liststore, protocol, interface, srcip, dstip, srcport, dstport, stime, etime, NULL);
         if (conflict_path != NULL)
         {
             // 如果有冲突，提示用户
@@ -137,29 +139,30 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
         else
         {
             // 如果没有冲突，将新的一行写入database和ListStore并刷新TreeView
-            insertData(protocol, srcip, dstip, srcport, dstport, stime, etime, block, remarks);
+            insertData(protocol, interface, srcip, dstip, srcport, dstport, stime, etime, block, remarks);
             // 将新的一行写入ListStore
             GtkTreeIter iter;
             gtk_list_store_append(liststore, &iter);
             gtk_list_store_set(liststore, &iter,
                                1, protocol,
-                               2, srcip,
-                               3, dstip,
-                               4, srcport,
-                               5, dstport,
-                               6, stime,
-                               7, etime,
-                               8, block,
-                               9, remarks,
+                               2, interface,
+                               3, srcip,
+                               4, dstip,
+                               5, srcport,
+                               6, dstport,
+                               7, stime,
+                               8, etime,
+                               9, block,
+                               10, remarks,
                                -1);
             // 刷新TreeView
             showData(liststore);
             // 提示用户添加成功
             GtkWidget *success_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),
-                                                            GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                            GTK_MESSAGE_INFO,
-                                                            GTK_BUTTONS_CLOSE,
-                                                            "Add successful!");
+                                                               GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                               GTK_MESSAGE_INFO,
+                                                               GTK_BUTTONS_CLOSE,
+                                                               "Add successful!");
             gtk_dialog_run(GTK_DIALOG(success_dialog));
             gtk_widget_destroy(success_dialog);
 
@@ -170,7 +173,6 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
             // 高亮新添加的行
             gtk_tree_selection_select_path(gtk_tree_view_get_selection(treeview), path);
             gtk_tree_path_free(path);
-
         }
     }
 
@@ -179,6 +181,16 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
     g_object_unref(builder);
 }
 
+// 将ESC映射到编辑对话框的Cancel按钮
+gboolean on_edit_dialog_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    // 如果按下的是ESC键，将其映射到编辑对话框的Cancel按钮
+    if (event->keyval == GDK_KEY_Escape)
+    {
+        gtk_dialog_response(GTK_DIALOG(widget), GTK_RESPONSE_CANCEL);
+    }
+    return FALSE;
+}
 
 // 如果entry_srcip或者entry_dstip的secondary icon被点击，弹出ip_popover
 void on_ip_entry_icon_press(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
@@ -721,7 +733,6 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
     }
 }
 
-
 // 将Delete按键映射为delete_button的回调函数
 gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
@@ -747,7 +758,6 @@ void on_select_all_button_clicked(GtkButton *button, gpointer data)
     gtk_tree_selection_select_all(selection);
 }
 
-
 // 双击treeview中的行或选择treeview中的行后点击Enter时，弹出编辑对话框
 void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data)
 {
@@ -755,6 +765,7 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
     GtkBuilder *builder = gtk_builder_new_from_resource("/glade/edit.glade");
     GtkWidget *edit_dialog = GTK_WIDGET(gtk_builder_get_object(builder, "edit_dialog"));
     GtkComboBoxText *combox_protocol = GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, "combox_protocol"));
+    GtkEntry *entry_interface = GTK_ENTRY(gtk_builder_get_object(builder, "entry_interface"));
     GtkEntry *entry_srcip = GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcip"));
     GtkEntry *entry_dstip = GTK_ENTRY(gtk_builder_get_object(builder, "entry_dstip"));
     GtkEntry *entry_srcport = GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcport"));
@@ -768,20 +779,22 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
     GtkListStore *liststore = GTK_LIST_STORE(data);
     GtkTreeIter iter;
     gtk_tree_model_get_iter(GTK_TREE_MODEL(liststore), &iter, path);
-    gchar *protocol, *srcip, *dstip, *srcport, *dstport, *stime, *etime, *remarks;
+    gchar *protocol, *interface, *srcip, *dstip, *srcport, *dstport, *stime, *etime, *remarks;
     gboolean block;
     gtk_tree_model_get(GTK_TREE_MODEL(liststore), &iter,
                        1, &protocol,
-                       2, &srcip,
-                       3, &dstip,
-                       4, &srcport,
-                       5, &dstport,
-                       6, &stime,
-                       7, &etime,
-                       8, &block,
-                       9, &remarks,
+                       2, &interface,
+                       3, &srcip,
+                       4, &dstip,
+                       5, &srcport,
+                       6, &dstport,
+                       7, &stime,
+                       8, &etime,
+                       9, &block,
+                       10, &remarks,
                        -1);
     gtk_combo_box_text_append(combox_protocol, NULL, protocol);
+    gtk_entry_set_text(entry_interface, interface);
     gtk_entry_set_text(entry_srcip, srcip);
     gtk_entry_set_text(entry_dstip, dstip);
     gtk_entry_set_text(entry_srcport, srcport);
@@ -805,6 +818,7 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
         // 获取entry中的内容
         // protocol的内容从comboboxtext中获取
         protocol = gtk_combo_box_text_get_active_text(combox_protocol);
+        interface = (gchar *)gtk_entry_get_text(entry_interface);
         srcip = (gchar *)gtk_entry_get_text(entry_srcip);
         dstip = (gchar *)gtk_entry_get_text(entry_dstip);
         srcport = (gchar *)gtk_entry_get_text(entry_srcport);
@@ -815,7 +829,7 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
         remarks = (gchar *)gtk_entry_get_text(entry_remarks);
 
         // 检查是否有冲突
-        GtkTreePath *conflict_path = checkConflict(liststore, protocol, srcip, dstip, srcport, dstport, stime, etime, path);
+        GtkTreePath *conflict_path = checkConflict(liststore, protocol, interface, srcip, dstip, srcport, dstport, stime, etime, path);
         if (conflict_path != NULL)
         {
             // 如果有冲突，提示用户
@@ -844,7 +858,7 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
             gint id;
             gtk_tree_model_get(GTK_TREE_MODEL(liststore), &iter, 0, &id, -1);
 
-            if (!updateData(id, protocol, srcip, dstip, srcport, dstport, stime, etime, block, remarks))
+            if (!updateData(id, protocol, interface, srcip, dstip, srcport, dstport, stime, etime, block, remarks))
             {
                 // 提示用户修改数据库失败
                 GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(edit_dialog),
@@ -859,14 +873,15 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
             // 修改treeview中的记录
             gtk_list_store_set(liststore, &iter,
                                1, protocol,
-                               2, srcip,
-                               3, dstip,
-                               4, srcport,
-                               5, dstport,
-                               6, stime,
-                               7, etime,
-                               8, block,
-                               9, remarks,
+                               2, interface,
+                               3, srcip,
+                               4, dstip,
+                               5, srcport,
+                               6, dstport,
+                               7, stime,
+                               8, etime,
+                               9, block,
+                               10, remarks,
                                -1);
 
             // 提示用户编辑成功
@@ -887,6 +902,3 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
     // 释放资源
     g_object_unref(builder);
 }
-
-
-

@@ -1,7 +1,7 @@
 #include "utils.h"
 
 // 检查规则是否冲突，如果冲突，返回具体冲突规则的path，否则返回NULL（为便于编辑时检查冲突，将编辑的行的path传入, path默认为NULL，表示新增规则）
-GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime, GtkTreePath *path)
+GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *interface, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime, GtkTreePath *path)
 {
     GtkTreeIter iter;
     gboolean valid;
@@ -15,7 +15,7 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srci
         return NULL;
 
     // 存储每一行的数据
-    gchar *storedProtocol, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime;
+    gchar *storedProtocol, *storedInterface, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime;
     GtkTreePath *conflict_path = NULL;
 
     while (valid)
@@ -29,17 +29,19 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srci
         }
 
         gtk_tree_model_get(GTK_TREE_MODEL(liststore), &iter,
-                           1, &storedProtocol,
-                           2, &storedSrcIP,
-                           3, &storedDstIP,
-                           4, &storedSrcPort,
-                           5, &storedDstPort,
-                           6, &storedSTime,
-                           7, &storedETime,
-                           -1);
+                            1, &storedProtocol,
+                            2, &storedInterface,
+                            3, &storedSrcIP,
+                            4, &storedDstIP,
+                            5, &storedSrcPort,
+                            6, &storedDstPort,
+                            7, &storedSTime,
+                            8, &storedETime,
+                            -1);
 
         // 进行冲突检查
         if (g_strcmp0(storedProtocol, protocol) == 0 &&
+            g_strcmp0(storedInterface, interface) == 0 &&
             g_strcmp0(storedSrcIP, srcip) == 0 &&
             g_strcmp0(storedDstIP, dstip) == 0 &&
             g_strcmp0(storedSrcPort, srcport) == 0 &&
@@ -56,6 +58,7 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *srci
     }
 
     g_free(storedProtocol);
+    g_free(storedInterface);
     g_free(storedSrcIP);
     g_free(storedDstIP);
     g_free(storedSrcPort);
@@ -87,28 +90,30 @@ void on_search_entry_search_changed(GtkSearchEntry *searchentry, gpointer data)
 
     while (valid)
     {
-        gchar *storedProtocol, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime, *storedRemrks;
+        gchar *storedProtocol, *storedInterface, *storedSrcIP, *storedDstIP, *storedSrcPort, *storedDstPort, *storedSTime, *storedETime, *storedRemrks;
         gtk_tree_model_get(model, &iter,
                            1, &storedProtocol,
-                           2, &storedSrcIP,
-                           3, &storedDstIP,
-                           4, &storedSrcPort,
-                           5, &storedDstPort,
-                           6, &storedSTime,
-                           7, &storedETime,
-                           9, &storedRemrks,
+                            2, &storedInterface,
+                            3, &storedSrcIP,
+                            4, &storedDstIP,
+                            5, &storedSrcPort,
+                            6, &storedDstPort,
+                            7, &storedSTime,
+                            8, &storedETime,
+                            10, &storedRemrks,
                            -1);
 
         // 进行搜索(只要有一个字段包含搜索文本即可，对大小写不敏感)
         gchar *lower_text = g_ascii_strdown(search_text, -1);
-        gboolean match = (strstr(g_ascii_strdown(storedProtocol, -1), lower_text) != NULL) ||
-                         (strstr(g_ascii_strdown(storedSrcIP, -1), lower_text) != NULL) ||
-                         (strstr(g_ascii_strdown(storedDstIP, -1), lower_text) != NULL) ||
-                         (strstr(g_ascii_strdown(storedSrcPort, -1), lower_text) != NULL) ||
-                         (strstr(g_ascii_strdown(storedDstPort, -1), lower_text) != NULL) ||
-                         (strstr(g_ascii_strdown(storedSTime, -1), lower_text) != NULL) ||
-                         (strstr(g_ascii_strdown(storedETime, -1), lower_text) != NULL) ||
-                         (strstr(g_ascii_strdown(storedRemrks, -1), lower_text) != NULL);
+        gboolean match =    (storedProtocol != NULL && strstr(g_ascii_strdown(storedProtocol, -1), lower_text) != NULL) ||
+                            (storedInterface != NULL && strstr(g_ascii_strdown(storedInterface, -1), lower_text) != NULL) ||
+                            (storedSrcIP != NULL && strstr(g_ascii_strdown(storedSrcIP, -1), lower_text) != NULL) ||
+                            (storedDstIP != NULL && strstr(g_ascii_strdown(storedDstIP, -1), lower_text) != NULL) ||
+                            (storedSrcPort != NULL && strstr(g_ascii_strdown(storedSrcPort, -1), lower_text) != NULL) ||
+                            (storedDstPort != NULL && strstr(g_ascii_strdown(storedDstPort, -1), lower_text) != NULL) ||
+                            (storedSTime != NULL && strstr(g_ascii_strdown(storedSTime, -1), lower_text) != NULL) ||
+                            (storedETime != NULL && strstr(g_ascii_strdown(storedETime, -1), lower_text) != NULL) ||
+                            (storedRemrks != NULL && strstr(g_ascii_strdown(storedRemrks, -1), lower_text) != NULL);
 
         if (match)
         {
@@ -128,6 +133,7 @@ void on_search_entry_search_changed(GtkSearchEntry *searchentry, gpointer data)
 
         g_free(lower_text);
         g_free(storedProtocol);
+        g_free(storedInterface);
         g_free(storedSrcIP);
         g_free(storedDstIP);
         g_free(storedSrcPort);
@@ -139,4 +145,3 @@ void on_search_entry_search_changed(GtkSearchEntry *searchentry, gpointer data)
         valid = gtk_tree_model_iter_next(model, &iter);
     }
 }
-

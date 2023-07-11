@@ -58,4 +58,3 @@ void on_data_dir_button_clicked(GtkButton *button, gpointer data)
     // 打开文件管理器
     gtk_show_uri_on_window(NULL, data_dir, GDK_CURRENT_TIME, NULL);
 }
-

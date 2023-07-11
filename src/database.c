@@ -23,7 +23,7 @@ int initDatabase()
         return rc;
     }
 
-    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, src_ip TEXT, dst_ip TEXT, src_port TEXT, dst_port TEXT, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
+    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, interface TEXT, src_ip TEXT, dst_ip TEXT, src_port TEXT, dst_port TEXT, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
     rc = sqlite3_exec(db, createTableQuery, 0, 0, 0);
     if (rc != SQLITE_OK)
     {
@@ -38,14 +38,14 @@ void closeDatabase()
     sqlite3_close(db);
 }
 
-gboolean insertData(const char *protocol, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
+gboolean insertData(const char *protocol, const char *interface, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
 {
     char *errorMsg = 0;
     char insertQuery[256];
     int actionValue = action ? 1 : 0;
 
-    snprintf(insertQuery, sizeof(insertQuery), "INSERT INTO rules (protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s');",
-             protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks);
+    snprintf(insertQuery, sizeof(insertQuery), "INSERT INTO rules (protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, '%s');",
+             protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks);
 
     // 插入数据到数据库
     int rc = sqlite3_exec(db, insertQuery, 0, 0, &errorMsg);
@@ -56,7 +56,7 @@ gboolean insertData(const char *protocol, const char *src_ip, const char *dst_ip
         return FALSE;
     }
     // 插入数据到设备文件
-    if (!appendDataToDeviceFile(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action))
+    if (!appendDataToDeviceFile(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action))
     {
         return FALSE;
     }
@@ -86,16 +86,17 @@ int importData(const char *filename, GtkListStore *liststore)
     {
         count++;
         const char *protocol = (const char *)sqlite3_column_text(stmt, 1);
-        const char *src_ip = (const char *)sqlite3_column_text(stmt, 2);
-        const char *dst_ip = (const char *)sqlite3_column_text(stmt, 3);
-        const char *src_port = (const char *)sqlite3_column_text(stmt, 4);
-        const char *dst_port = (const char *)sqlite3_column_text(stmt, 5);
-        const char *start_time = (const char *)sqlite3_column_text(stmt, 6);
-        const char *end_time = (const char *)sqlite3_column_text(stmt, 7);
-        gboolean action = sqlite3_column_int(stmt, 8) != 0;
-        const char *remarks = (const char *)sqlite3_column_text(stmt, 9);
+        const char *interface = (const char *)sqlite3_column_text(stmt, 2);
+        const char *src_ip = (const char *)sqlite3_column_text(stmt, 3);
+        const char *dst_ip = (const char *)sqlite3_column_text(stmt, 4);
+        const char *src_port = (const char *)sqlite3_column_text(stmt, 5);
+        const char *dst_port = (const char *)sqlite3_column_text(stmt, 6);
+        const char *start_time = (const char *)sqlite3_column_text(stmt, 7);
+        const char *end_time = (const char *)sqlite3_column_text(stmt, 8);
+        gboolean action = sqlite3_column_int(stmt, 9) != 0;
+        const char *remarks = (const char *)sqlite3_column_text(stmt, 10);
 
-        if (checkConflict(liststore, (gchar *)protocol, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks))
+        if (checkConflict(liststore, (gchar *)protocol, (gchar *)interface, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks))
         {
             count--;
         }
@@ -124,7 +125,7 @@ int exportData(const char *filename, GtkTreeView *data)
         g_warning("打开数据库错误: %s", sqlite3_errmsg(exportDb));
         return 0;
     }
-    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, src_ip TEXT, dst_ip TEXT, src_port TEXT, dst_port TEXT, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
+    const char *createTableQuery = "CREATE TABLE IF NOT EXISTS rules (id INTEGER PRIMARY KEY AUTOINCREMENT, protocol TEXT, interface TEXT, src_ip TEXT, dst_ip TEXT, src_port TEXT, dst_port TEXT, start_time TEXT, end_time TEXT, action INTEGER, remarks TEXT);";
     rc = sqlite3_exec(exportDb, createTableQuery, 0, 0, 0);
     if (rc != SQLITE_OK)
     {
@@ -148,6 +149,7 @@ int exportData(const char *filename, GtkTreeView *data)
         gtk_tree_model_get_iter(model, &iter, path);
 
         gchar *protocol;
+        gchar *interface;
         gchar *src_ip;
         gchar *dst_ip;
         gchar *src_port;
@@ -158,20 +160,22 @@ int exportData(const char *filename, GtkTreeView *data)
         gchar *remarks;
 
         gtk_tree_model_get(model, &iter,
-                           1, &protocol,
-                           2, &src_ip,
-                           3, &dst_ip,
-                           4, &src_port,
-                           5, &dst_port,
-                           6, &start_time,
-                           7, &end_time,
-                           8, &action,
-                           9, &remarks,
-                           -1);
+                            1, &protocol,
+                            2, &interface,
+                            3, &src_ip,
+                            4, &dst_ip,
+                            5, &src_port,
+                            6, &dst_port,
+                            7, &start_time,
+                            8, &end_time,
+                            9, &action,
+                            10, &remarks,
+                            -1);
 
-        insertData(protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks);
+        insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks);
 
         g_free(protocol);
+        g_free(interface);
         g_free(src_ip);
         g_free(dst_ip);
         g_free(start_time);
@@ -218,14 +222,14 @@ int deleteData(int id)
     return TRUE;
 }
 
-gboolean updateData(int id, const char *protocol, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
+gboolean updateData(int id, const char *protocol, const char *interface, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action, const char *remarks)
 {
     char *errorMsg = 0;
     char updateQuery[256];
     int actionValue = action ? 1 : 0;
 
-    snprintf(updateQuery, sizeof(updateQuery), "UPDATE rules SET protocol = '%s', src_ip = '%s', dst_ip = '%s', src_port = '%s', dst_port = '%s', start_time = '%s', end_time = '%s', action = %d, remarks = '%s' WHERE id = %d;",
-             protocol, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks, id);
+    snprintf(updateQuery, sizeof(updateQuery), "UPDATE rules SET protocol = '%s', interface= '%s', src_ip = '%s', dst_ip = '%s', src_port = '%s', dst_port = '%s', start_time = '%s', end_time = '%s', action = %d, remarks = '%s' WHERE id = %d;",
+             protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, actionValue, remarks, id);
 
     // 从数据库中更新数据
     int rc = sqlite3_exec(db, updateQuery, 0, 0, &errorMsg);
@@ -262,29 +266,31 @@ gboolean showData(GtkListStore *liststore)
     {
         int id = sqlite3_column_int(stmt, 0);
         const char *protocol = (const char *)sqlite3_column_text(stmt, 1);
-        const char *src_ip = (const char *)sqlite3_column_text(stmt, 2);
-        const char *dst_ip = (const char *)sqlite3_column_text(stmt, 3);
-        const char *src_port = (const char *)sqlite3_column_text(stmt, 4);
-        const char *dst_port = (const char *)sqlite3_column_text(stmt, 5);
-        const char *start_time = (const char *)sqlite3_column_text(stmt, 6);
-        const char *end_time = (const char *)sqlite3_column_text(stmt, 7);
-        gboolean action = sqlite3_column_int(stmt, 8) != 0;
-        const char *remarks = (const char *)sqlite3_column_text(stmt, 9);
+        const char *interface = (const char *)sqlite3_column_text(stmt, 2);
+        const char *src_ip = (const char *)sqlite3_column_text(stmt, 3);
+        const char *dst_ip = (const char *)sqlite3_column_text(stmt, 4);
+        const char *src_port = (const char *)sqlite3_column_text(stmt, 5);
+        const char *dst_port = (const char *)sqlite3_column_text(stmt, 6);
+        const char *start_time = (const char *)sqlite3_column_text(stmt, 7);
+        const char *end_time = (const char *)sqlite3_column_text(stmt, 8);
+        gboolean action = sqlite3_column_int(stmt, 9) != 0;
+        const char *remarks = (const char *)sqlite3_column_text(stmt, 10);
 
         GtkTreeIter iter;
         gtk_list_store_append(liststore, &iter);
         gtk_list_store_set(liststore, &iter,
-                           0, id,
-                           1, protocol,
-                           2, src_ip,
-                           3, dst_ip,
-                           4, src_port,
-                           5, dst_port,
-                           6, start_time,
-                           7, end_time,
-                           8, action,
-                           9, remarks,
-                           -1);
+                            0, id,
+                            1, protocol,
+                            2, interface,
+                            3, src_ip,
+                            4, dst_ip,
+                            5, src_port,
+                            6, dst_port,
+                            7, start_time,
+                            8, end_time,
+                            9, action,
+                            10, remarks,
+                            -1);
     }
 
     sqlite3_finalize(stmt);
@@ -317,17 +323,18 @@ gboolean writeDataToDeviceFile()
     {
         // 除了protocol和action，其他都可能为空，若为空则写入占位0
         const char *protocol = (const char *)sqlite3_column_text(stmt, 1);
-        const char *src_ip = (const char *)sqlite3_column_text(stmt, 2);
-        const char *dst_ip = (const char *)sqlite3_column_text(stmt, 3);
-        const char *src_port = (const char *)sqlite3_column_text(stmt, 4);
-        const char *dst_port = (const char *)sqlite3_column_text(stmt, 5);
-        const char *start_time = (const char *)sqlite3_column_text(stmt, 6);
-        const char *end_time = (const char *)sqlite3_column_text(stmt, 7);
-        gboolean action = sqlite3_column_int(stmt, 8) != 0;
+        const char *interface = (const char *)sqlite3_column_text(stmt, 2);
+        const char *src_ip = (const char *)sqlite3_column_text(stmt, 3);
+        const char *dst_ip = (const char *)sqlite3_column_text(stmt, 4);
+        const char *src_port = (const char *)sqlite3_column_text(stmt, 5);
+        const char *dst_port = (const char *)sqlite3_column_text(stmt, 6);
+        const char *start_time = (const char *)sqlite3_column_text(stmt, 7);
+        const char *end_time = (const char *)sqlite3_column_text(stmt, 8);
+        gboolean action = sqlite3_column_int(stmt, 9) != 0;
 
         char line[256];
-        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %d\n",
-                 protocol, src_ip[0] == '\0' ? "0" : src_ip, dst_ip[0] == '\0' ? "0" : dst_ip, src_port[0] == '\0' ? "0" : src_port, dst_port[0] == '\0' ? "0" : dst_port, start_time[0] == '\0' ? "0" : start_time, end_time[0] == '\0' ? "0" : end_time, action);
+        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s %d\n",
+                 protocol, interface[0] == '\0' ? "?" : interface, src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time, action);
 
         fputs(line, fp);
     }
@@ -339,7 +346,7 @@ gboolean writeDataToDeviceFile()
 }
 
 // 追加到设备文件（添加和导入用）
-gboolean appendDataToDeviceFile(const char *protocol, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action)
+gboolean appendDataToDeviceFile(const char *protocol, const char *interface, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action)
 {
     FILE *fp = fopen(DEVICE_FILE, "a");
     if (fp == NULL)
@@ -350,8 +357,8 @@ gboolean appendDataToDeviceFile(const char *protocol, const char *src_ip, const 
     }
 
     char line[256];
-    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %d\n",
-             protocol, src_ip[0] == '\0' ? "0" : src_ip, dst_ip[0] == '\0' ? "0" : dst_ip, src_port[0] == '\0' ? "0" : src_port, dst_port[0] == '\0' ? "0" : dst_port, start_time[0] == '\0' ? "0" : start_time, end_time[0] == '\0' ? "0" : end_time, action);
+    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s %d\n",
+             protocol, interface[0] == '\0' ? "?" : interface , src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time, action);
 
     fputs(line, fp);
 
