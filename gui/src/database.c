@@ -334,7 +334,7 @@ gboolean writeDataToDeviceFile()
         const char *end_time = (const char *)sqlite3_column_text(stmt, 8);
 
         char line[256];
-        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s\n",
+        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s ;",
                  protocol, interface[0] == '\0' ? "?" : interface, src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
 
         fputs(line, fp);
@@ -360,8 +360,8 @@ gboolean appendDataToDeviceFile(const char *protocol, const char *interface, con
     }
 
     char line[256];
-    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s %d\n",
-             protocol, interface[0] == '\0' ? "?" : interface , src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time, action);
+    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s ;",
+             protocol, interface[0] == '\0' ? "?" : interface , src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
 
     fputs(line, fp);
 
