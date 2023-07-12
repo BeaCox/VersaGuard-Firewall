@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
 
     // 初始化数据库
     initDatabase();
+    // 建立log软连接
+    createLogLink();
 
     // 应用css文件
     GtkCssProvider *cssProvider = gtk_css_provider_new();
@@ -103,3 +105,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+

@@ -5,13 +5,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 #include "utils.h"
-
-// 应用的数据库放在`~/.config/VersaGuard`下
-#define APP_DIR ".config/VersaGuard"
-#define APP_DB "rules.db"
-
-// 设备文件路径
-#define DEVICE_FILE "/dev/firewall"
+#include "global.h"
 
 
 // 初始化数据库

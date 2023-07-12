@@ -321,6 +321,8 @@ gboolean writeDataToDeviceFile()
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
+        gboolean action = sqlite3_column_int(stmt, 9) != 0;
+        if(!action) continue;
         // 除了protocol和action，其他都可能为空，若为空则写入占位0
         const char *protocol = (const char *)sqlite3_column_text(stmt, 1);
         const char *interface = (const char *)sqlite3_column_text(stmt, 2);
@@ -330,13 +332,13 @@ gboolean writeDataToDeviceFile()
         const char *dst_port = (const char *)sqlite3_column_text(stmt, 6);
         const char *start_time = (const char *)sqlite3_column_text(stmt, 7);
         const char *end_time = (const char *)sqlite3_column_text(stmt, 8);
-        gboolean action = sqlite3_column_int(stmt, 9) != 0;
 
         char line[256];
-        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s %d\n",
-                 protocol, interface[0] == '\0' ? "?" : interface, src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time, action);
+        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s\n",
+                 protocol, interface[0] == '\0' ? "?" : interface, src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
 
         fputs(line, fp);
+
     }
 
     fclose(fp);
@@ -348,6 +350,7 @@ gboolean writeDataToDeviceFile()
 // 追加到设备文件（添加和导入用）
 gboolean appendDataToDeviceFile(const char *protocol, const char *interface, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action)
 {
+    if(!action) return TRUE;
     FILE *fp = fopen(DEVICE_FILE, "a");
     if (fp == NULL)
     {
