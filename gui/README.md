@@ -4,7 +4,7 @@ NIS3302信息安全科技创新课程大作业——基于内核模块的包过�
 ## Screenshots
 ![Main](https://s2.loli.net/2023/07/12/UmLSk7xaMVrP4HG.png)
 ![Edit](https://s2.loli.net/2023/07/12/6jiEaI4etYsxFWS.png)
-![Log](https://s2.loli.net/2023/07/12/6MqJZrQaohgLExC.png)
+![Log](https://s2.loli.net/2023/07/12/3b7QSZ1O5ET8Vdt.png)
 
 ## TODO
 
