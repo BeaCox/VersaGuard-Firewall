@@ -19,10 +19,10 @@ IMG_SOURCE = ui/img.xml
 
 .PHONY: all clean
 
-all: $(BIN_DIR)/VersaGuard $(GLADE_TARGET) $(CSS_TARGET) $(IMG_TARGET)
+all: $(BIN_DIR)/VersaGuard-gui $(GLADE_TARGET) $(CSS_TARGET) $(IMG_TARGET)
 
-$(BIN_DIR)/VersaGuard: $(OBJECTS)
-	$(CC) -o $(BIN_DIR)/VersaGuard $(OBJECTS) $(LIBS)
+$(BIN_DIR)/VersaGuard-gui: $(OBJECTS)
+	$(CC) -o $(BIN_DIR)/VersaGuard-gui $(OBJECTS) $(LIBS)
 
 $(BUILD_DIR)/%.o: src/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -37,7 +37,7 @@ $(IMG_TARGET):
 	$(MAKE) -C img
 
 clean:
-	rm -f $(BIN_DIR)/VersaGuard $(OBJECTS)
+	rm -f $(BIN_DIR)/VersaGuard-gui $(OBJECTS)
 	$(MAKE) -C ui clean
 	$(MAKE) -C img clean
 
