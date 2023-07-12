@@ -341,7 +341,7 @@ bool writeRulesToDevice(sqlite3* db)
 
         // 将规则转换为字符串格式并写入设备文件
         char rule[512];
-        snprintf(rule, sizeof(rule), "%s %s %s %s %s %s %s %s \n", protocol, interface, src_ip, dst_ip,
+        snprintf(rule, sizeof(rule), "%s %s %s %s %s %s %s %s ;", protocol, interface, src_ip, dst_ip,
                  src_port, dst_port, start_time, end_time);
 
         ssize_t bytes_written = write(fd, rule, strlen(rule));
