@@ -31,9 +31,11 @@ typedef struct
 } Rule;
 
 Rule rules[RULE_MAX] = {
-    {3, NULL, NULL, "1970-01-01 00:00:00", "2099-12-31 23:59:59", NULL, NULL, NULL},
+    {2, "192.168.1.1", "192.168.2.2", "1970-01-01 00:00:00", "2099-12-31 23:59:59", "ens33", "80", "80"},
     // 其他元素的初始化
 };
+
+// 本防火墙的时间拦截功能基于东八区时间
 
 static struct nf_hook_ops *nf_blocktcppkt_ops = NULL;
 static struct nf_hook_ops *nf_blockudppkt_ops = NULL;
@@ -45,6 +47,25 @@ static struct nf_hook_ops *nf_blockdstport_ops = NULL;
 static struct nf_hook_ops *nf_blocktime_ops = NULL;
 static struct nf_hook_ops *nf_blockdev_ops = NULL;
 
+inline char *get_protocol(int type)
+{
+    if (type == 0)
+        return "TCP";
+    else if (type == 1)
+        return "UDP";
+    else if (type == 2)
+        return "ICMP";
+    else
+        return "ALL";
+}
+
+inline char *change(char *s)
+{
+    if (s == NULL)
+        return "?";
+    else
+        return s;
+}
 // rule_read
 int rule_num = 1;
 
@@ -56,6 +77,15 @@ bool is_time_between(const char *cur_time, int i)
 
 static unsigned int nf_blocktcppkt_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // TCP
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
+
     for (int i = 0; i < rule_num; i++)
     {
         if (rules[i].protocol_type == 3)
@@ -78,6 +108,12 @@ static unsigned int nf_blocktcppkt_handler(void *priv, struct sk_buff *skb, cons
             else if (iph->protocol == IPPROTO_TCP)
             {
                 printk(KERN_INFO "Drop TCP packet \n");
+                //[当前时间] 协议 网络接口 目的ip:目的端口 blocked 源ip:源端口
+                //[2023-07-12 08:06:00] TCP ens33 192.168.1.1:80 blocked 192.168.1.2:21
+                printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                       get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                       change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                       change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
                 return NF_DROP;
             }
             else if (iph->protocol == IPPROTO_ICMP)
@@ -91,6 +127,14 @@ static unsigned int nf_blocktcppkt_handler(void *priv, struct sk_buff *skb, cons
 
 static unsigned int nf_blockudppkt_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // UDP
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
     for (int i = 0; i < rule_num; i++)
     {
         if (rules[i].protocol_type == 3)
@@ -98,13 +142,16 @@ static unsigned int nf_blockudppkt_handler(void *priv, struct sk_buff *skb, cons
         if (rules[i].protocol_type == 1)
         {
             struct iphdr *iph;
-            struct udphdr *udph;
             if (!skb)
                 return NF_ACCEPT;
             iph = ip_hdr(skb);
             if (iph->protocol == IPPROTO_UDP)
             {
                 printk(KERN_INFO "Drop UDP packet \n");
+                printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                       get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                       change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                       change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
                 return NF_DROP;
             }
             else if (iph->protocol == IPPROTO_TCP)
@@ -121,6 +168,14 @@ static unsigned int nf_blockudppkt_handler(void *priv, struct sk_buff *skb, cons
 }
 static unsigned int nf_blockicmppkt_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // ICMP
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
     for (int i = 0; i < rule_num; i++)
     {
         if (rules[i].protocol_type == 3)
@@ -147,6 +202,10 @@ static unsigned int nf_blockicmppkt_handler(void *priv, struct sk_buff *skb, con
             else if (iph->protocol == IPPROTO_ICMP)
             {
                 printk(KERN_INFO "Drop ICMP packet \n");
+                printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                       get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                       change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                       change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
                 return NF_DROP;
             }
         }
@@ -155,7 +214,14 @@ static unsigned int nf_blockicmppkt_handler(void *priv, struct sk_buff *skb, con
 }
 static unsigned int nf_blockipsaddr_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // 源IP地址
 {
-
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
     if (!skb)
     {
         return NF_ACCEPT;
@@ -180,6 +246,10 @@ static unsigned int nf_blockipsaddr_handler(void *priv, struct sk_buff *skb, con
             if (!strcmp(str, rules[i].ip_saddr_rule)) // 与设定过滤的源ip地址对比
             {
                 printk(KERN_INFO "Drop SRC_IP packet \n");
+                printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                       get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                       change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                       change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
                 return NF_DROP;
             }
         }
@@ -189,6 +259,14 @@ static unsigned int nf_blockipsaddr_handler(void *priv, struct sk_buff *skb, con
 
 static unsigned int nf_blockipdaddr_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // 目标IP地址
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
     if (!skb)
     {
         return NF_ACCEPT;
@@ -213,6 +291,10 @@ static unsigned int nf_blockipdaddr_handler(void *priv, struct sk_buff *skb, con
             if (!strcmp(str, rules[i].ip_daddr_rule))
             {
                 printk(KERN_INFO "Drop DST_IP packet \n");
+                printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                       get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                       change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                       change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
                 return NF_DROP;
             }
         }
@@ -222,6 +304,14 @@ static unsigned int nf_blockipdaddr_handler(void *priv, struct sk_buff *skb, con
 
 static unsigned int nf_blocksrcport_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // 源端口
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
     struct iphdr *iph;
     if (!skb)
         return NF_ACCEPT;
@@ -239,6 +329,10 @@ static unsigned int nf_blocksrcport_handler(void *priv, struct sk_buff *skb, con
             if ((thead->source) == *(unsigned short *)rules[i].deny_src_port)
             {
                 printk(KERN_INFO "Drop SRC_PORT packet \n");
+                printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                       get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                       change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                       change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
                 return NF_DROP;
             }
         }
@@ -248,6 +342,14 @@ static unsigned int nf_blocksrcport_handler(void *priv, struct sk_buff *skb, con
 
 static unsigned int nf_blockdstport_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // 目标端口
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
     struct iphdr *iph;
     if (!skb)
         return NF_ACCEPT;
@@ -265,6 +367,10 @@ static unsigned int nf_blockdstport_handler(void *priv, struct sk_buff *skb, con
             if ((thead->dest) == *(unsigned short *)rules[i].deny_dst_port)
             {
                 printk(KERN_INFO "Drop DST_PORT packet \n");
+                printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                       get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                       change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                       change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
                 return NF_DROP;
             }
         }
@@ -281,7 +387,7 @@ static unsigned int nf_blocktime_handler(void *priv, const struct nf_hook_state 
     char cur_time[21];
     snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
              result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
-             result.tm_hour, result.tm_min, result.tm_sec);
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
 
     for (int i = 0; i < rule_num; i++)
     {
@@ -289,6 +395,10 @@ static unsigned int nf_blocktime_handler(void *priv, const struct nf_hook_state 
         if (is_between)
         {
             printk(KERN_INFO "Drop TIME packet\n");
+            printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                   get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                   change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                   change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
             return NF_DROP;
         }
     }
@@ -297,6 +407,14 @@ static unsigned int nf_blocktime_handler(void *priv, const struct nf_hook_state 
 
 static unsigned int nf_blockdev_handler(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) // 网络接口
 {
+    struct timespec64 ts;
+    ktime_get_real_ts64(&ts);
+    struct tm result;
+    time64_to_tm(ts.tv_sec, 0, &result);
+    char cur_time[21];
+    snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
+             result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
+             result.tm_hour + 8, result.tm_min, result.tm_sec);
     struct net_device *dev;
     if (!skb)
         return NF_ACCEPT;
@@ -310,6 +428,10 @@ static unsigned int nf_blockdev_handler(void *priv, struct sk_buff *skb, const s
         if (!strcmp(dev->name, rules[i].dev_rule))
         {
             printk(KERN_INFO "Drop DEV packet \n");
+            printk(KERN_INFO "[%s] %s %s %s:%s blocked %s:%s\n", cur_time,
+                   get_protocol(rules[i].protocol_type), change(rules[i].dev_rule),
+                   change(rules[i].ip_daddr_rule), change(rules[i].deny_dst_port),
+                   change(rules[i].ip_saddr_rule), change(rules[i].deny_src_port));
             return NF_DROP;
         }
     }
