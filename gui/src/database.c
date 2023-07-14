@@ -208,6 +208,11 @@ gboolean deleteData(int id)
         sqlite3_free(errorMsg);
         return FALSE;
     }
+    // 从设备文件中删除数据
+    if (!writeDataToDeviceFile())
+    {
+        return FALSE;
+    }
 
     return TRUE;
 }
@@ -369,3 +374,4 @@ gboolean checkPermission()
     // 检查文件的读写权限，0为有权限，-1为无权限。两个权限都有返回1，否则返回0
     return access(DEVICE_FILE, R_OK | W_OK) == 0;
 }
+

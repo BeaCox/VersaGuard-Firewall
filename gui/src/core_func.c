@@ -750,12 +750,7 @@ gboolean on_delete_press_event(GtkWidget *widget, GdkEventKey *event, gpointer d
 // 全选按钮回调函数
 void on_select_all_button_clicked(GtkButton *button, gpointer data)
 {
-    // 获取treeview
-    GtkTreeView *treeview = GTK_TREE_VIEW(data);
-    // 获取liststore
-    GtkListStore *liststore = GTK_LIST_STORE(gtk_tree_view_get_model(treeview));
-    // 获取selection
-    GtkTreeSelection *selection = gtk_tree_view_get_selection(treeview);
+    GtkTreeSelection *selection = GTK_TREE_SELECTION(data);
     // 选中所有行
     gtk_tree_selection_select_all(selection);
 }
@@ -948,4 +943,5 @@ void on_combox_protocol_changed(GtkComboBox *combobox, gpointer data){
     // 释放资源
     g_free(protocol);
 }
+
 

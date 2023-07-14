@@ -82,6 +82,9 @@ int main(int argc, char *argv[])
     headerBar = GTK_WIDGET(gtk_builder_get_object(builder, "headerbar"));
     gtk_window_set_titlebar(GTK_WINDOW(window), headerBar);
 
+
+    // 数据库内容全部写入设备文件
+    writeDataToDeviceFile();
     // 显示数据
     showData(liststore);
 
@@ -102,4 +105,5 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
 
