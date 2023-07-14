@@ -1,0 +1,30 @@
+name: Copy Files to Bin
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  copy_files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Create Bin Directory
+        run: mkdir -p bin/
+
+      - name: Copy CLI and GUI to Bin
+        run: |
+          cp cli/VersaGuard-cli bin/
+          cp gui/bin/VersaGuard-gui bin/
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add bin/
+          git commit -m "Update bin directory"
+          git push
