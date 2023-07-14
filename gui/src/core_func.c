@@ -105,8 +105,9 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
         gchar *interface = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_interface")));
         gchar *srcip = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcip")));
         gchar *dstip = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_dstip")));
-        gchar *srcport = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcport")));
-        gchar *dstport = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_dstport")));
+        // 如果是ICMP协议，srcport和dstport都设为空
+        gchar *srcport = strcmp(protocol, "ICMP") ? (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_srcport"))) : "";
+        gchar *dstport = strcmp(protocol, "ICMP") ? (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_dstport"))) : "";
         gchar *stime = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_stime")));
         gchar *etime = (gchar *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entry_etime")));
         // block的内容从checkbutton中获取
@@ -735,7 +736,7 @@ void on_delete_button_clicked(GtkButton *button, gpointer data)
 }
 
 // 将Delete按键映射为delete_button的回调函数
-gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
+gboolean on_delete_press_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
     if (event->keyval == GDK_KEY_Delete)
     {
@@ -776,6 +777,7 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
     GtkCheckButton *ckbt_block = GTK_CHECK_BUTTON(gtk_builder_get_object(builder, "ckbt_block"));
     GtkEntry *entry_remarks = GTK_ENTRY(gtk_builder_get_object(builder, "entry_remarks"));
 
+
     // 将双击的行的内容写入对话框中
     GtkListStore *liststore = GTK_LIST_STORE(data);
     GtkTreeIter iter;
@@ -794,12 +796,25 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
                        9, &block,
                        10, &remarks,
                        -1);
-    gtk_combo_box_text_append(combox_protocol, NULL, protocol);
+    // 将内容写入对话框中
+    // 协议，选择原有的协议
+    gtk_combo_box_set_active_id(GTK_COMBO_BOX(combox_protocol), protocol);
     gtk_entry_set_text(entry_interface, interface);
     gtk_entry_set_text(entry_srcip, srcip);
     gtk_entry_set_text(entry_dstip, dstip);
-    gtk_entry_set_text(entry_srcport, srcport);
-    gtk_entry_set_text(entry_dstport, dstport);
+    // 如果协议为ICMP，隐藏端口号输入框和端口号标签
+    if (strcmp(protocol, "ICMP") == 0)
+    {
+        gtk_widget_hide(GTK_WIDGET(entry_srcport));
+        gtk_widget_hide(GTK_WIDGET(entry_dstport));
+        gtk_widget_hide(GTK_WIDGET(gtk_builder_get_object(builder, "label_srcport")));
+        gtk_widget_hide(GTK_WIDGET(gtk_builder_get_object(builder, "label_dstport")));
+    }
+    else
+    {
+        gtk_entry_set_text(entry_srcport, srcport);
+        gtk_entry_set_text(entry_dstport, dstport);
+    }
     gtk_entry_set_text(entry_stime, stime);
     gtk_entry_set_text(entry_etime, etime);
     // checkbutton的状态
@@ -822,8 +837,9 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
         interface = (gchar *)gtk_entry_get_text(entry_interface);
         srcip = (gchar *)gtk_entry_get_text(entry_srcip);
         dstip = (gchar *)gtk_entry_get_text(entry_dstip);
-        srcport = (gchar *)gtk_entry_get_text(entry_srcport);
-        dstport = (gchar *)gtk_entry_get_text(entry_dstport);
+        // 如果协议为ICMP，端口号设置为空
+        srcport = strcmp(protocol, "ICMP") == 0 ? "" : (gchar *)gtk_entry_get_text(entry_srcport);
+        dstport = strcmp(protocol, "ICMP") == 0 ? "" : (gchar *)gtk_entry_get_text(entry_dstport);
         stime = (gchar *)gtk_entry_get_text(entry_stime);
         etime = (gchar *)gtk_entry_get_text(entry_etime);
         block = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(ckbt_block));
@@ -903,3 +919,33 @@ void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTree
     // 释放资源
     g_object_unref(builder);
 }
+
+void on_combox_protocol_changed(GtkComboBox *combobox, gpointer data){
+    // 获取当前选中的协议
+    gchar *protocol = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combobox));
+    // 获取grid_edit（data）
+    GtkWidget *grid_edit = GTK_WIDGET(data);
+    // 获取entry_srcport,entry_dstport,label_srcport,label_dstport
+    GtkWidget *entry_srcport = GTK_WIDGET(gtk_grid_get_child_at(GTK_GRID(grid_edit), 1, 4));
+    GtkWidget *entry_dstport = GTK_WIDGET(gtk_grid_get_child_at(GTK_GRID(grid_edit), 1, 5));
+    GtkWidget *label_srcport = GTK_WIDGET(gtk_grid_get_child_at(GTK_GRID(grid_edit), 0, 4));
+    GtkWidget *label_dstport = GTK_WIDGET(gtk_grid_get_child_at(GTK_GRID(grid_edit), 0, 5));
+    // 如果是TCP或UDP或ALL，显示端口号输入框
+    if (strcmp(protocol, "TCP") == 0 || strcmp(protocol, "UDP") == 0 || strcmp(protocol, "ALL") == 0)
+    {
+        gtk_widget_show(entry_srcport);
+        gtk_widget_show(entry_dstport);
+        gtk_widget_show(label_srcport);
+        gtk_widget_show(label_dstport);
+    }
+    else
+    {
+        gtk_widget_hide(entry_srcport);
+        gtk_widget_hide(entry_dstport);
+        gtk_widget_hide(label_srcport);
+        gtk_widget_hide(label_dstport);
+    }
+    // 释放资源
+    g_free(protocol);
+}
+

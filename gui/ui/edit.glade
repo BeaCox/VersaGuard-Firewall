@@ -381,23 +381,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkComboBoxText" id="combox_protocol">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="active">0</property>
-                <items>
-                  <item translatable="yes">ALL</item>
-                  <item translatable="yes">TCP</item>
-                  <item translatable="yes">UDP</item>
-                  <item translatable="yes">ICMP</item>
-                </items>
-              </object>
-              <packing>
-                <property name="left-attach">1</property>
-                <property name="top-attach">0</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkEntry" id="entry_stime">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
@@ -472,6 +455,24 @@
               <packing>
                 <property name="left-attach">1</property>
                 <property name="top-attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="combox_protocol">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="active">0</property>
+                <items>
+                  <item id="ALL" translatable="yes">ALL</item>
+                  <item id="TCP" translatable="yes">TCP</item>
+                  <item id="UDP" translatable="yes">UDP</item>
+                  <item id="ICMP" translatable="yes">ICMP</item>
+                </items>
+                <signal name="changed" handler="on_combox_protocol_changed" object="grid_edit" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
               </packing>
             </child>
           </object>
