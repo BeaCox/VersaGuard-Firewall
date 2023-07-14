@@ -91,7 +91,7 @@ int importData(const char *filename, GtkListStore *liststore)
         gboolean action = sqlite3_column_int(stmt, 9) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 10);
 
-        if (checkConflict(liststore, (gchar *)protocol, (gchar *)interface, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) || !appendDataToDeviceFile(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action))
+        if (checkConflict(liststore, (gchar *)protocol, (gchar *)interface, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks))
         {
             count--;
         }
@@ -99,6 +99,12 @@ int importData(const char *filename, GtkListStore *liststore)
 
     sqlite3_finalize(stmt);
     sqlite3_close(importDb);
+
+    // 重新写入设备文件
+    if (!writeDataToDeviceFile())
+    {
+        return FALSE;
+    }
 
     return count;
 }
@@ -374,4 +380,5 @@ gboolean checkPermission()
     // 检查文件的读写权限，0为有权限，-1为无权限。两个权限都有返回1，否则返回0
     return access(DEVICE_FILE, R_OK | W_OK) == 0;
 }
+
 
