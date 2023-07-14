@@ -1,8 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <gtk/gtk.h>
 
+#include "global.h"
 
 // 检查冲突功能
 GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *interface, gchar *srcip, gchar *dstip, gchar *srcport, gchar *dstport, gchar *stime, gchar *etime, GtkTreePath *path);

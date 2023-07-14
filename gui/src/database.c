@@ -193,7 +193,7 @@ int exportData(const char *filename, GtkTreeView *data)
     return count;
 }
 
-int deleteData(int id)
+gboolean deleteData(int id)
 {
     char *errorMsg = 0;
     char deleteQuery[256];
@@ -206,11 +206,6 @@ int deleteData(int id)
     {
         g_warning("删除数据错误: %s", errorMsg);
         sqlite3_free(errorMsg);
-        return FALSE;
-    }
-    // 重新写入设备文件
-    if (!writeDataToDeviceFile())
-    {
         return FALSE;
     }
 
@@ -313,6 +308,9 @@ gboolean writeDataToDeviceFile()
         g_printerr("打开设备文件错误: %s\n", strerror(errno));
         return FALSE;
     }
+    
+    // 先删除设备文件中的内容
+    ftruncate(fileno(fp), 0);
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {

@@ -1,7 +1,4 @@
-#include "database.h"
-#include "headerbar.h"
 #include "core_func.h"
-#include "utils.h"
 #include "logs.h"
 
 GMainLoop *main_loop = NULL; // 初始化主循环为NULL
