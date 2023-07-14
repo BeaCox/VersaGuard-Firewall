@@ -1,0 +1,20 @@
+digraph C_Project {
+    node [shape=box];
+
+    utils [label="utils.h"];
+    logs [label="logs.h"];
+    headerbar [label="headerbar.h"];
+    global [label="global.h"];
+    database [label="database.h"];
+    core_func [label="core_func.h"];
+    main [label="main.c"];
+
+    utils -> global;
+    logs -> global;
+    headerbar -> global;
+    database -> utils;
+    core_func -> database;
+    main -> logs;
+    main -> core_func;
+}
+

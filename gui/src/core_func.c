@@ -138,8 +138,9 @@ void on_add_button_clicked(GtkButton *button, gpointer data)
         }
         else
         {
-            // 如果没有冲突，将新的一行写入database和ListStore并刷新TreeView
+            // 如果没有冲突，将新的一行写入database和ListStore并刷新TreeView，追加到设备文件尾部
             insertData(protocol, interface, srcip, dstip, srcport, dstport, stime, etime, block, remarks);
+            appendDataToDeviceFile(protocol, interface, srcip, dstip, srcport, dstport, stime, etime, block);
             // 将新的一行写入ListStore
             GtkTreeIter iter;
             gtk_list_store_append(liststore, &iter);

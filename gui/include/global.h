@@ -1,6 +1,8 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <gtk/gtk.h>
+
 // 应用的数据库放在`~/.config/VersaGuard`下
 #define APP_DIR ".config/VersaGuard"
 #define APP_DB "rules.db"

@@ -2,22 +2,24 @@
 
 // 监视日志文件的线程，一旦有更新，就更新日志显示到textview
 
-void* watchLog(void* data)
+void *watchLog(void *data)
 {
     char log_file[PATH_MAX];
     memset(log_file, 0, PATH_MAX);
     sprintf(log_file, "%s/%s", LOG_DIR, LOG_FILE);
     // 获取textview
-    GtkTextView* textview = GTK_TEXT_VIEW(data);
-    GtkTextBuffer* buffer = gtk_text_view_get_buffer(textview);
+    GtkTextView *textview = GTK_TEXT_VIEW(data);
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(textview);
     // 创建tag
-    GtkTextTag* tag1 = gtk_text_buffer_create_tag(buffer, "mono-spaced", "family", "monospace", NULL);
-    GtkTextTag* tag2 = gtk_text_buffer_create_tag(buffer, "12", "size", 12 * PANGO_SCALE, NULL);
-    GtkTextTag* tag3 = gtk_text_buffer_create_tag(buffer, "green_foreground", "foreground", "green", NULL);
-    GtkTextTag* warning_tag = gtk_text_buffer_create_tag(buffer, "warning", "foreground", "red", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, NULL);
+    GtkTextTag *common_tag = gtk_text_buffer_create_tag(buffer, "common", "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+    GtkTextTag *warning_tag = gtk_text_buffer_create_tag(buffer, "warning", "foreground", "red", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+    GtkTextTag *time_tag = gtk_text_buffer_create_tag(buffer, "time", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+    GtkTextTag *tcp_tag = gtk_text_buffer_create_tag(buffer, "tcp", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+    GtkTextTag *udp_tag = gtk_text_buffer_create_tag(buffer, "udp", "foreground", "pink", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+    GtkTextTag *icmp_tag = gtk_text_buffer_create_tag(buffer, "icmp", "foreground", "purple", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
 
     // 打开日志文件
-    FILE* fp = fopen(log_file, "r");
+    FILE *fp = fopen(log_file, "r");
     if (fp == NULL)
     {
         // 日志文件打开失败，在textview中显示错误信息，提示用户先安装内核模块
@@ -64,10 +66,51 @@ void* watchLog(void* data)
         fseek(fp, size, SEEK_SET);
         fread(buf, 1, new_size - size, fp);
 
-        // 将新增内容显示到textview
         GtkTextIter iter;
         gtk_text_buffer_get_end_iter(buffer, &iter);
-        gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, buf, -1, "mono-spaced", "12", "green_foreground", NULL);
+
+        // 每一行的不同字段用不同的tag显示
+        char *line = strtok(buf, "\n");
+        while (line != NULL)
+        {
+            // 获取行的第一个字段（时间，格式为XXXX-XX-XX XX:XX:XX）
+            char *date = strtok(line, " ");
+            char *time = strtok(NULL, " ");
+            // 拼接时间
+            char time_str[24];
+            memset(time_str, 0, 24);
+            sprintf(time_str, "%s %s", date, time);
+            // 应用time_tag（补充完整前面的[）
+            gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, "[", -1, "time", NULL);
+            gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, time_str, -1, "time", NULL);
+            // 插入空格
+            gtk_text_buffer_insert(buffer, &iter, " ", -1);
+            // 获取行的第二个字段（协议）
+            char *protocol = strtok(NULL, " ");
+            // 应用protocol_tag
+            if (strcmp(protocol, "TCP") == 0)
+            {
+                gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, protocol, -1, "tcp", NULL);
+            }
+            else if (strcmp(protocol, "UDP") == 0)
+            {
+                gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, protocol, -1, "udp", NULL);
+            }
+            else if (strcmp(protocol, "ICMP") == 0)
+            {
+                gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, protocol, -1, "icmp", NULL);
+            }
+            // 插入空格
+            gtk_text_buffer_insert(buffer, &iter, " ", -1);
+            // 获取字符串剩下的部分
+            char *rest = strtok(NULL, "");
+            // 应用common_tag
+            gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, rest, -1, "common", NULL);
+            // 插入换行
+            gtk_text_buffer_insert(buffer, &iter, "\n", -1);
+            // 获取下一行
+            line = strtok(NULL, "\n");
+        }
         // 更新文件大小
         size = new_size;
 
@@ -90,9 +133,9 @@ void createLogLink()
     sprintf(app_log_file, "%s/%s/%s", g_get_home_dir(), APP_DIR, LOG_FILE);
 
     // 如果软连接不存在，创建软连接
-    if (access(app_log_file, F_OK) != 0) {
+    if (access(app_log_file, F_OK) != 0)
+    {
         symlink(log_file, app_log_file);
     }
 }
-
 

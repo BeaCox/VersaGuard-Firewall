@@ -55,11 +55,6 @@ gboolean insertData(const char *protocol, const char *interface, const char *src
         sqlite3_free(errorMsg);
         return FALSE;
     }
-    // 插入数据到设备文件
-    if (!appendDataToDeviceFile(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action))
-    {
-        return FALSE;
-    }
 
     return TRUE;
 }
@@ -96,7 +91,7 @@ int importData(const char *filename, GtkListStore *liststore)
         gboolean action = sqlite3_column_int(stmt, 9) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 10);
 
-        if (checkConflict(liststore, (gchar *)protocol, (gchar *)interface, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks))
+        if (checkConflict(liststore, (gchar *)protocol, (gchar *)interface, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) || !appendDataToDeviceFile(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action))
         {
             count--;
         }
@@ -198,7 +193,7 @@ int exportData(const char *filename, GtkTreeView *data)
     return count;
 }
 
-int deleteData(int id)
+gboolean deleteData(int id)
 {
     char *errorMsg = 0;
     char deleteQuery[256];
@@ -211,11 +206,6 @@ int deleteData(int id)
     {
         g_warning("删除数据错误: %s", errorMsg);
         sqlite3_free(errorMsg);
-        return FALSE;
-    }
-    // 重新写入设备文件
-    if (!writeDataToDeviceFile())
-    {
         return FALSE;
     }
 
@@ -318,6 +308,9 @@ gboolean writeDataToDeviceFile()
         g_printerr("打开设备文件错误: %s\n", strerror(errno));
         return FALSE;
     }
+    
+    // 先删除设备文件中的内容
+    ftruncate(fileno(fp), 0);
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
@@ -334,7 +327,7 @@ gboolean writeDataToDeviceFile()
         const char *end_time = (const char *)sqlite3_column_text(stmt, 8);
 
         char line[256];
-        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s\n",
+        snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s ;",
                  protocol, interface[0] == '\0' ? "?" : interface, src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
 
         fputs(line, fp);
@@ -360,8 +353,8 @@ gboolean appendDataToDeviceFile(const char *protocol, const char *interface, con
     }
 
     char line[256];
-    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s %d\n",
-             protocol, interface[0] == '\0' ? "?" : interface , src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time, action);
+    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s ;",
+             protocol, interface[0] == '\0' ? "?" : interface , src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
 
     fputs(line, fp);
 
