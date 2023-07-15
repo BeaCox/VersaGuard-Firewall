@@ -1,63 +1,31 @@
 #include "logs.h"
 
-// 监视日志文件的线程，一旦有更新，就更新日志显示到textview
+static off_t size = 0; // 记录文件大小
 
-void *watchLog(void *data)
+// 监视日志文件的回调函数，当文件变化时调用
+
+void file_changed_callback(GFileMonitor *monitor, GFile *file, GFile *other_file, GFileMonitorEvent event_type, gpointer user_data)
 {
-    char log_file[PATH_MAX];
-    memset(log_file, 0, PATH_MAX);
-    sprintf(log_file, "%s/%s", LOG_DIR, LOG_FILE);
-    // 获取textview
-    GtkTextView *textview = GTK_TEXT_VIEW(data);
+    GtkTextView *textview = GTK_TEXT_VIEW(user_data);
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(textview);
-    // 创建tag
-    GtkTextTag *common_tag = gtk_text_buffer_create_tag(buffer, "common", "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-    GtkTextTag *warning_tag = gtk_text_buffer_create_tag(buffer, "warning", "foreground", "red", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-    GtkTextTag *time_tag = gtk_text_buffer_create_tag(buffer, "time", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-    GtkTextTag *tcp_tag = gtk_text_buffer_create_tag(buffer, "tcp", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-    GtkTextTag *udp_tag = gtk_text_buffer_create_tag(buffer, "udp", "foreground", "pink", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-    GtkTextTag *icmp_tag = gtk_text_buffer_create_tag(buffer, "icmp", "foreground", "purple", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
 
-    // 打开日志文件
-    FILE *fp = fopen(log_file, "r");
-    if (fp == NULL)
+    if (event_type == G_FILE_MONITOR_EVENT_CHANGED)
     {
-        // 日志文件打开失败，在textview中显示错误信息，提示用户先安装内核模块
-        GtkTextIter iter;
-        gtk_text_buffer_get_end_iter(buffer, &iter);
-        gtk_text_buffer_insert_with_tags_by_name(buffer, &iter, "Failed to open log file! Please install kernel module and restart!\n", -1, "warning", NULL);
-        return NULL;
-    }
-
-    // 获取文件描述符
-    int fd = fileno(fp);
-
-    // 获取文件大小
-    struct stat st;
-    stat(log_file, &st);
-    off_t size = st.st_size;
-
-    // 读取文件内容
-    char buf[LOG_BUF_SIZE];
-    memset(buf, 0, LOG_BUF_SIZE);
-
-    // 监视文件描述符
-    while (TRUE)
-    {
-        // 休眠1秒
-        g_usleep(1000000);
-
+        // 文件发生改变，处理文件变化事件
         // 获取文件大小
-        stat(log_file, &st);
+        struct stat st;
+        gchar *filename = g_file_get_path(file);
+        stat(filename, &st);
         off_t new_size = st.st_size;
-
-        // 如果文件大小没有变化，继续休眠
+        // 如果文件大小没有变化，直接返回
         if (new_size == size)
-            continue;
+            return;
 
         // 文件大小变化，读取新增内容
+        char buf[LOG_BUF_SIZE];
         memset(buf, 0, LOG_BUF_SIZE);
-        fp = fopen(log_file, "r");
+
+        FILE *fp = fopen(filename, "r");
         if (fp == NULL)
         {
             perror("fopen");
@@ -69,6 +37,13 @@ void *watchLog(void *data)
         GtkTextIter iter;
         gtk_text_buffer_get_end_iter(buffer, &iter);
 
+        GtkTextTag *common_tag = gtk_text_buffer_create_tag(buffer, "common", "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        GtkTextTag *warning_tag = gtk_text_buffer_create_tag(buffer, "warning", "foreground", "red", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        GtkTextTag *time_tag = gtk_text_buffer_create_tag(buffer, "time", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        GtkTextTag *tcp_tag = gtk_text_buffer_create_tag(buffer, "tcp", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        GtkTextTag *udp_tag = gtk_text_buffer_create_tag(buffer, "udp", "foreground", "pink", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        GtkTextTag *icmp_tag = gtk_text_buffer_create_tag(buffer, "icmp", "foreground", "purple", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+
         // 每一行的不同字段用不同的tag显示
         char *line = strtok(buf, "\n");
         while (line != NULL)
@@ -76,6 +51,7 @@ void *watchLog(void *data)
             // 获取行的第一个字段（时间，格式为XXXX-XX-XX XX:XX:XX）
             char *date = strtok(line, " ");
             char *time = strtok(NULL, " ");
+
             // 拼接时间
             char time_str[24];
             memset(time_str, 0, 24);
@@ -111,6 +87,7 @@ void *watchLog(void *data)
             // 获取下一行
             line = strtok(NULL, "\n");
         }
+
         // 更新文件大小
         size = new_size;
 
@@ -118,7 +95,7 @@ void *watchLog(void *data)
         fclose(fp);
     }
 
-    return NULL;
+    return;
 }
 
 // 建立log文件的软连接
@@ -128,6 +105,10 @@ void createLogLink()
     char log_file[PATH_MAX];
     memset(log_file, 0, PATH_MAX);
     sprintf(log_file, "%s/%s", LOG_DIR, LOG_FILE);
+    // 初始化文件大小
+    struct stat st;
+    stat(log_file, &st);
+    size = st.st_size;
     char app_log_file[PATH_MAX];
     memset(app_log_file, 0, PATH_MAX);
     sprintf(app_log_file, "%s/%s/%s", g_get_home_dir(), APP_DIR, LOG_FILE);

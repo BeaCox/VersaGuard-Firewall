@@ -4,15 +4,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <pthread.h>
 #include "global.h"
+
 
 #define LOG_BUF_SIZE 1024
 
-
-void *watchLog(void *data);
-// void on_log_searchentry_search_changed(GtkSearchEntry *searchentry, gpointer data);
+void file_changed_callback(GFileMonitor *monitor, GFile *file, GFile *other_file, GFileMonitorEvent event_type, gpointer user_data);
 void createLogLink();
 
 #endif // LOGS_H
+
 

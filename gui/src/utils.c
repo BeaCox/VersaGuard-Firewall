@@ -57,15 +57,6 @@ GtkTreePath *checkConflict(GtkListStore *liststore, gchar *protocol, gchar *inte
         valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(liststore), &iter);
     }
 
-    g_free(storedProtocol);
-    g_free(storedInterface);
-    g_free(storedSrcIP);
-    g_free(storedDstIP);
-    g_free(storedSrcPort);
-    g_free(storedDstPort);
-    g_free(storedSTime);
-    g_free(storedETime);
-
     return conflict_path;
 }
 
@@ -131,17 +122,7 @@ void on_search_entry_search_changed(GtkSearchEntry *searchentry, gpointer data)
             gtk_tree_path_free(path);
         }
 
-        g_free(lower_text);
-        g_free(storedProtocol);
-        g_free(storedInterface);
-        g_free(storedSrcIP);
-        g_free(storedDstIP);
-        g_free(storedSrcPort);
-        g_free(storedDstPort);
-        g_free(storedSTime);
-        g_free(storedETime);
-        g_free(storedRemrks);
-
         valid = gtk_tree_model_iter_next(model, &iter);
     }
 }
+

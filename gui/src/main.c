@@ -1,30 +1,9 @@
 #include "core_func.h"
 #include "logs.h"
 
-GMainLoop *main_loop = NULL; // 初始化主循环为NULL
-pthread_t thread;
-
 void on_main_window_destroy()
 {
-    if (main_loop != NULL)
-    {
-        // 退出主循环
-        g_main_loop_quit(main_loop);
-    }
-
-    // 结束线程
-    pthread_cancel(thread);
-
-    // 等待线程结束
-    pthread_join(thread, NULL);
-
-    // 释放资源
-    if (main_loop != NULL)
-    {
-        g_main_loop_unref(main_loop);
-    }
-
-    // 退出程序
+    // 退出主循环
     gtk_main_quit();
 
     // 关闭数据库
@@ -42,7 +21,8 @@ int main(int argc, char *argv[])
     gtk_init(&argc, &argv);
 
     // 检查权限
-    if (!checkPermission()) {
+    if (!checkPermission())
+    {
         // 没有权限，弹出对话框
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "No write access to device files! Please run as root!");
         gtk_dialog_run(GTK_DIALOG(dialog));
@@ -73,8 +53,6 @@ int main(int argc, char *argv[])
     // 应用css文件
     GtkCssProvider *cssProvider = gtk_css_provider_new();
     gtk_css_provider_load_from_resource(cssProvider, "/css/main.css");
-    // GdkScreen *screen = gdk_screen_get_default();
-    // gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     GtkStyleContext *styleContext = gtk_widget_get_style_context(window);
     gtk_style_context_add_provider(styleContext, GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     g_object_unref(cssProvider);
@@ -82,28 +60,30 @@ int main(int argc, char *argv[])
     headerBar = GTK_WIDGET(gtk_builder_get_object(builder, "headerbar"));
     gtk_window_set_titlebar(GTK_WINDOW(window), headerBar);
 
-
     // 数据库内容全部写入设备文件
     writeDataToDeviceFile();
     // 显示数据
     showData(liststore);
 
-    // 创建监视日志文件的线程
-    pthread_create(&thread, NULL, watchLog, textview);
+    // 创建GFile对象
+    char log_file[PATH_MAX];
+    sprintf(log_file, "%s/%s", LOG_DIR, LOG_FILE);
+    GFile *file = g_file_new_for_path(log_file);
+
+    // 创建文件监视器
+    GFileMonitor *monitor = g_file_monitor_file(file, G_FILE_MONITOR_NONE, NULL, NULL);
+    g_signal_connect(monitor, "changed", G_CALLBACK(file_changed_callback), textview);
 
     // 显示窗口
     gtk_widget_show_all(window);
-
-    // 创建主循环
-    main_loop = g_main_loop_new(NULL, FALSE);
 
     // 运行主循环
     gtk_main();
 
     // 释放资源
+    g_object_unref(monitor);
+    g_object_unref(file);
     g_object_unref(builder);
 
     return 0;
 }
-
-
