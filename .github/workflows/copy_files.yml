@@ -16,10 +16,11 @@ jobs:
       - name: Create Bin Directory
         run: mkdir -p bin/
 
-      - name: Copy CLI and GUI to Bin
+      - name: Copy CLI, GUI and KO to Bin
         run: |
           cp cli/VersaGuard-cli bin/
           cp gui/bin/VersaGuard-gui bin/
+          cp core/VersaGuard_core.ko bin/
 
       - name: Commit and Push Changes
         run: |
