@@ -1,1 +1,0 @@
-cmd_/home/g-aoi/桌面/workstation/工作站/kernel最终实现/Module.symvers := sed 's/ko$$/o/' /home/g-aoi/桌面/workstation/工作站/kernel最终实现/modules.order | scripts/mod/modpost -m -a  -o /home/g-aoi/桌面/workstation/工作站/kernel最终实现/Module.symvers -e -i Module.symvers   -T -

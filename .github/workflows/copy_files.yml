@@ -18,9 +18,9 @@ jobs:
 
       - name: Copy CLI, GUI and KO to Bin
         run: |
-          cp cli/VersaGuard-cli bin/
+          cp cli/bin/VersaGuard-cli bin/
           cp gui/bin/VersaGuard-gui bin/
-          cp core/VersaGuard_core.ko bin/
+          cp core/bin/VersaGuard_core.ko bin/
 
       - name: Commit and Push Changes
         run: |

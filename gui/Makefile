@@ -22,9 +22,11 @@ IMG_SOURCE = ui/img.xml
 all: $(BIN_DIR)/VersaGuard-gui $(GLADE_TARGET) $(CSS_TARGET) $(IMG_TARGET)
 
 $(BIN_DIR)/VersaGuard-gui: $(OBJECTS)
+	@mkdir -p $(BIN_DIR)
 	$(CC) -o $(BIN_DIR)/VersaGuard-gui $(OBJECTS) $(LIBS)
 
 $(BUILD_DIR)/%.o: src/%.c $(HEADERS)
+	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(GLADE_TARGET):
@@ -37,7 +39,8 @@ $(IMG_TARGET):
 	$(MAKE) -C img
 
 clean:
-	rm -f $(BIN_DIR)/VersaGuard-gui $(OBJECTS)
+	rm -rf $(BIN_DIR)
+	rm -rf $(BUILD_DIR)
 	$(MAKE) -C ui clean
 	$(MAKE) -C img clean
 

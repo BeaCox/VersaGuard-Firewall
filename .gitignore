@@ -1,3 +1,7 @@
-# 忽略glade临时文件
 *.glade~
 #*.glade#
+
+core/build/
+gui/build/
+cli/build/
+
