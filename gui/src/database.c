@@ -91,7 +91,7 @@ int importData(const char *filename, GtkListStore *liststore)
         gboolean action = sqlite3_column_int(stmt, 9) != 0;
         const char *remarks = (const char *)sqlite3_column_text(stmt, 10);
 
-        if (checkConflict(liststore, (gchar *)protocol, (gchar *)interface, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks) || !appendDataToDeviceFile(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action))
+        if (checkConflict(liststore, (gchar *)protocol, (gchar *)interface, (gchar *)src_ip, (gchar *)dst_ip, (gchar *)src_port, (gchar *)dst_port, (gchar *)start_time, (gchar *)end_time, NULL) || !insertData(protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time, action, remarks))
         {
             count--;
         }
@@ -320,8 +320,9 @@ gboolean writeDataToDeviceFile()
         return FALSE;
     }
     
-    // 先清空设备文件
-    fprintf(fp, "%s", "");
+    // 先删除设备文件中的内容
+    ftruncate(fileno(fp), 0);
+    fputs("", fp);
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
