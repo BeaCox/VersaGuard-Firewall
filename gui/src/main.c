@@ -20,6 +20,16 @@ int main(int argc, char *argv[])
 
     gtk_init(&argc, &argv);
 
+    // 检查内核模块是否加载
+    if (!checkModule())
+    {
+        // 没有安装内核模块，提示用户并退出应用
+        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "Kernel module not installed! Please install it first!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return 0;
+    }
+
     // 检查权限
     if (!checkPermission())
     {
@@ -87,3 +97,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+

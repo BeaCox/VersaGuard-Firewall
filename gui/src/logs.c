@@ -37,12 +37,22 @@ void file_changed_callback(GFileMonitor *monitor, GFile *file, GFile *other_file
         GtkTextIter iter;
         gtk_text_buffer_get_end_iter(buffer, &iter);
 
-        GtkTextTag *common_tag = gtk_text_buffer_create_tag(buffer, "common", "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-        GtkTextTag *warning_tag = gtk_text_buffer_create_tag(buffer, "warning", "foreground", "red", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-        GtkTextTag *time_tag = gtk_text_buffer_create_tag(buffer, "time", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-        GtkTextTag *tcp_tag = gtk_text_buffer_create_tag(buffer, "tcp", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-        GtkTextTag *udp_tag = gtk_text_buffer_create_tag(buffer, "udp", "foreground", "pink", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
-        GtkTextTag *icmp_tag = gtk_text_buffer_create_tag(buffer, "icmp", "foreground", "purple", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        // GtkTextTag *common_tag = gtk_text_buffer_create_tag(buffer, "common", "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        // GtkTextTag *warning_tag = gtk_text_buffer_create_tag(buffer, "warning", "foreground", "red", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        // GtkTextTag *time_tag = gtk_text_buffer_create_tag(buffer, "time", "foreground", "green", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        // GtkTextTag *tcp_tag = gtk_text_buffer_create_tag(buffer, "tcp", "foreground", "blue", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        // GtkTextTag *udp_tag = gtk_text_buffer_create_tag(buffer, "udp", "foreground", "pink", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+        // GtkTextTag *icmp_tag = gtk_text_buffer_create_tag(buffer, "icmp", "foreground", "purple", "weight", PANGO_WEIGHT_BOLD, "size", 12 * PANGO_SCALE, "font", "Monospace", NULL);
+
+        // 获取buffer的tag table
+        GtkTextTagTable *tag_table = gtk_text_buffer_get_tag_table(buffer);
+        // 获取tag
+        GtkTextTag *common_tag = gtk_text_tag_table_lookup(tag_table, "common");
+        GtkTextTag *warning_tag = gtk_text_tag_table_lookup(tag_table, "warning");
+        GtkTextTag *time_tag = gtk_text_tag_table_lookup(tag_table, "time");
+        GtkTextTag *tcp_tag = gtk_text_tag_table_lookup(tag_table, "tcp");
+        GtkTextTag *udp_tag = gtk_text_tag_table_lookup(tag_table, "udp");
+        GtkTextTag *icmp_tag = gtk_text_tag_table_lookup(tag_table, "icmp");
 
         // 每一行的不同字段用不同的tag显示
         char *line = strtok(buf, "\n");

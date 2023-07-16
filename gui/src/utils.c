@@ -126,3 +126,40 @@ void on_search_entry_search_changed(GtkSearchEntry *searchentry, gpointer data)
     }
 }
 
+
+// 检查设备文件权限功能
+gboolean checkPermission()
+{
+    // 检查文件的读写权限，0为有权限，-1为无权限。两个权限都有返回1，否则返回0
+    return access(DEVICE_FILE, R_OK | W_OK) == 0;
+}
+
+
+// 检查内核模块是否加载
+gboolean checkModule()
+{
+    // 执行lsmod | grep命令，检查是否加载了VersaGuard_ker模块
+    char command[256];
+    sprintf(command, "lsmod | grep %s", MODULE_NAME);
+
+    FILE *lsmodOutput = popen(command, "r");
+    if (lsmodOutput)
+    {
+        char line[256];
+        if (fgets(line, sizeof(line), lsmodOutput))
+        {
+            pclose(lsmodOutput);
+            return 1; // 内核模块已加载
+        }
+        pclose(lsmodOutput);
+    }
+
+    // 检查当前目录下是否有VersaGuard_ker.ko文件
+    // MODULE_NAME.ko为内核模块的文件名
+    if (access(MODULE_NAME ".ko", F_OK) == 0){
+        system("insmod " MODULE_NAME ".ko"); // 加载内核模块
+        return 1; // 内核模块已加载
+    }
+
+    return 0; // 内核模块未加载
+}

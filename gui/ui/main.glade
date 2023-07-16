@@ -48,11 +48,74 @@
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkTextBuffer" id="log_textbuffer"/>
   <object class="GtkImage" id="select_all_image">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="icon-name">emblem-ok-symbolic</property>
+  </object>
+  <object class="GtkTextTagTable" id="texttagtable">
+    <child type="tag">
+      <object class="GtkTextTag" id="common">
+        <property name="name">common</property>
+        <property name="foreground">black</property>
+        <property name="font">Normal</property>
+        <property name="family">Monospace</property>
+        <property name="scale">1.2</property>
+      </object>
+    </child>
+    <child type="tag">
+      <object class="GtkTextTag" id="warning">
+        <property name="name">warning</property>
+        <property name="foreground">red</property>
+        <property name="font">Monospace Bold 12</property>
+        <property name="family">Monospace</property>
+        <property name="weight">700</property>
+        <property name="scale">1.2</property>
+      </object>
+    </child>
+    <child type="tag">
+      <object class="GtkTextTag" id="time">
+        <property name="name">time</property>
+        <property name="foreground">green</property>
+        <property name="font">Monospace Bold 12</property>
+        <property name="family">Monospace</property>
+        <property name="weight">700</property>
+        <property name="scale">1.2</property>
+      </object>
+    </child>
+    <child type="tag">
+      <object class="GtkTextTag" id="tcp">
+        <property name="name">tcp</property>
+        <property name="foreground">blue</property>
+        <property name="font">Monospace Bold 12</property>
+        <property name="family">Monospace</property>
+        <property name="weight">700</property>
+        <property name="scale">1.2</property>
+      </object>
+    </child>
+    <child type="tag">
+      <object class="GtkTextTag" id="udp">
+        <property name="name">udp</property>
+        <property name="foreground">pink</property>
+        <property name="font">Monospace Bold 12</property>
+        <property name="family">Monospace</property>
+        <property name="weight">700</property>
+        <property name="scale">1.2</property>
+      </object>
+    </child>
+    <child type="tag">
+      <object class="GtkTextTag" id="icmp">
+        <property name="name">icmp</property>
+        <property name="foreground">purple</property>
+        <property name="font">Monospace Bold 12</property>
+        <property name="family">Monospace</property>
+        <property name="weight">700</property>
+        <property name="scale">1.2</property>
+      </object>
+    </child>
+  </object>
+  <object class="GtkTextBuffer" id="log_textbuffer">
+    <property name="tag-table">texttagtable</property>
   </object>
   <object class="GtkWindow" id="main_window">
     <property name="width-request">1300</property>

@@ -320,8 +320,8 @@ gboolean writeDataToDeviceFile()
         return FALSE;
     }
     
-    // 先删除设备文件中的内容
-    ftruncate(fileno(fp), 0);
+    // 先清空设备文件
+    fprintf(fp, "%s", "");
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
@@ -374,11 +374,5 @@ gboolean appendDataToDeviceFile(const char *protocol, const char *interface, con
     return TRUE;
 }
 
-// 检查权限功能
-gboolean checkPermission()
-{
-    // 检查文件的读写权限，0为有权限，-1为无权限。两个权限都有返回1，否则返回0
-    return access(DEVICE_FILE, R_OK | W_OK) == 0;
-}
 
 
