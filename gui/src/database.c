@@ -323,15 +323,20 @@ gboolean writeDataToDeviceFile()
     // 先删除设备文件中的内容
     ftruncate(fileno(fp), 0);
 
+
     // 如果数据库为空，则调用write系统调用写入空字符串，返回
-    if(stmt == NULL)
-    {
-        write(fileno(fp), "", 1);
+    if(sqlite3_step(stmt) != SQLITE_ROW){
+        fseek(fp, 0, SEEK_SET);  
+        fwrite("", 1, 1, fp);
         fclose(fp);
+        sqlite3_finalize(stmt);
         return TRUE;
     }
 
-    while (sqlite3_step(stmt) == SQLITE_ROW)
+    int count = 0;
+
+
+    do
     {
         gboolean action = sqlite3_column_int(stmt, 9) != 0;
         if(!action) continue;
@@ -350,7 +355,14 @@ gboolean writeDataToDeviceFile()
                  protocol, interface[0] == '\0' ? "?" : interface, src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
 
         fputs(line, fp);
+        count++;
+    }while (sqlite3_step(stmt) == SQLITE_ROW);
 
+    // 如果什么都没有写入，则写入空字符串
+    if(count == 0){
+        ftruncate(fileno(fp), 0);
+        fseek(fp, 0, SEEK_SET);  
+        fwrite("", 1, 1, fp);
     }
 
     fclose(fp);
@@ -359,28 +371,28 @@ gboolean writeDataToDeviceFile()
     return TRUE;
 }
 
-// 追加到设备文件（添加和导入用）
-gboolean appendDataToDeviceFile(const char *protocol, const char *interface, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action)
-{
-    if(!action) return TRUE;
-    FILE *fp = fopen(DEVICE_FILE, "a");
-    if (fp == NULL)
-    {
-        g_warning("打开设备文件错误: %s", strerror(errno));
-        g_printerr("打开设备文件错误: %s\n", strerror(errno));
-        return FALSE;
-    }
+// // 追加到设备文件（添加和导入用）
+// gboolean appendDataToDeviceFile(const char *protocol, const char *interface, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action)
+// {
+//     if(!action) return TRUE;
+//     FILE *fp = fopen(DEVICE_FILE, "a");
+//     if (fp == NULL)
+//     {
+//         g_warning("打开设备文件错误: %s", strerror(errno));
+//         g_printerr("打开设备文件错误: %s\n", strerror(errno));
+//         return FALSE;
+//     }
 
-    char line[256];
-    snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s ;",
-             protocol, interface[0] == '\0' ? "?" : interface , src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
+//     char line[256];
+//     snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s ;",
+//              protocol, interface[0] == '\0' ? "?" : interface , src_ip[0] == '\0' ? "?" : src_ip, dst_ip[0] == '\0' ? "?" : dst_ip, src_port[0] == '\0' ? "?" : src_port, dst_port[0] == '\0' ? "?" : dst_port, start_time[0] == '\0' ? "?" : start_time, end_time[0] == '\0' ? "?" : end_time);
 
-    fputs(line, fp);
+//     fputs(line, fp);
 
-    fclose(fp);
+//     fclose(fp);
 
-    return TRUE;
-}
+//     return TRUE;
+// }
 
 
 
