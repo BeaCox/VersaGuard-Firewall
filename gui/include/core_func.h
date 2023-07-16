@@ -31,5 +31,8 @@ gboolean on_delete_press_event(GtkWidget *widget, GdkEventKey *event, gpointer d
 void on_select_all_button_clicked(GtkButton *button, gpointer data);
 // 双击编辑功能
 void on_treeview_row_activated(GtkTreeView *treeview, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data);
+// 检查协议类型，ICMP不允许选择端口
+void on_combox_protocol_changed(GtkComboBox *combobox, gpointer data);
 #endif // CORE_FUNC_H
+
 

@@ -1,2 +1,3 @@
 # 忽略glade临时文件
 *.glade~
+#*.glade#

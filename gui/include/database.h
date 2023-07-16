@@ -25,8 +25,7 @@ gboolean showData(GtkListStore *liststore);
 gboolean writeDataToDeviceFile();
 // 追加到设备文件（添加和导入用）
 gboolean appendDataToDeviceFile(const char *protocol, const char *interface, const char *src_ip, const char *dst_ip, const char *src_port, const char *dst_port, const char *start_time, const char *end_time, gboolean action);
-// 检查权限功能
-gboolean checkPermission();
 #endif  // DATABASE_H
+
 
 

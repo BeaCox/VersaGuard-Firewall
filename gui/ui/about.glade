@@ -9,7 +9,7 @@
     <property name="destroy-with-parent">True</property>
     <property name="type-hint">normal</property>
     <property name="program-name">VersaGuard</property>
-    <property name="version">v1.0</property>
+    <property name="version">v1.0.0</property>
     <property name="copyright" translatable="yes">Copyright © 2023 BeaCox, G-AOi, wytili, YiboChen03, ZYXDDDDDSG
 </property>
     <property name="comments" translatable="yes">A lightweight kernel module-based packet filtering firewall.</property>

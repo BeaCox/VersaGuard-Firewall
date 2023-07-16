@@ -14,4 +14,11 @@
 #define LOG_DIR "/var/log"
 #define LOG_FILE "VersaGuard.log"
 
+// 内核模块名称
+#define MODULE_NAME "VersaGuard_core"
+
+// 应用的版本号
+#define APP_VERSION "v1.0.0"
+
 #endif // GLOBAL_H
+
