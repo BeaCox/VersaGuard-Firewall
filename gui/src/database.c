@@ -322,7 +322,14 @@ gboolean writeDataToDeviceFile()
     
     // 先删除设备文件中的内容
     ftruncate(fileno(fp), 0);
-    fputs("", fp);
+
+    // 如果数据库为空，则调用write系统调用写入空字符串，返回
+    if (sqlite3_step(stmt) == SQLITE_DONE)
+    {
+        write(fileno(fp), "", 1);
+        fclose(fp);
+        return TRUE;
+    }
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
