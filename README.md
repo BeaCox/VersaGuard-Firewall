@@ -1,10 +1,9 @@
 # VersaGuard-Firewall
 NIS3302信息安全科技创新课程大作业——基于内核模块的包过滤防火墙
+
 [![made-with-C](https://img.shields.io/badge/Made%20with-C-blue?logo=C)](https://www.cprogramming.com/)[![linux](https://img.shields.io/badge/Platform-linux-blue?logo=linux)](https://www.linux.org/)[![Built with GTK](https://img.shields.io/badge/Built%20with-GTK-blue?logo=gtk)](https://www.gtk.org/)
 
 [![](https://custom-icon-badges.demolab.com/github/languages/code-size/BeaCox/VersaGuard-Firewall?logo=file-code&logoColor=white)](https://github.com/BeaCox/VersaGuard-Firewall)[![GitHub release](https://img.shields.io/github/release/BeaCox/VersaGuard-Firewall.svg)](https://GitHub.com/BeaCox/VersaGuard-Firewall/releases/)
-
-![logo](gui/img/versaguard-logo.png)
 
 ## Usage
 
@@ -97,10 +96,12 @@ Features:
 
 [@BeaCox](https://github.com/BeaCox)
 
+[@Luke](https://github.com/YiboChen03)
+
 [@G-AOi](https://github.com/G-AOi)
 
 [@Wang Yiting](https://github.com/wytili)
 
-[@Luke](https://github.com/YiboChen03)
-
 [@ZYXDDDDDSG](https://github.com/ZYXDDDDDSG)
+
+（按照名称首字母排序）
