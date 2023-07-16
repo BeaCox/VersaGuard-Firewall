@@ -18,14 +18,16 @@ jobs:
 
       - name: Copy CLI, GUI and KO to Bin
         run: |
-          cp cli/bin/VersaGuard-cli bin/
-          cp gui/bin/VersaGuard-gui bin/
-          cp core/bin/VersaGuard_core.ko bin/
-
-      - name: Commit and Push Changes
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add bin/
-          git commit -m "Update bin directory"
-          git push
+          cp -f cli/bin/VersaGuard-cli bin/
+          cp -f gui/bin/VersaGuard-gui bin/
+          cp -f core/bin/VersaGuard_core.ko bin/
+          
+      - name: Commit & Push
+        uses: action-x/commit@v2.9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push-branch: 'main'
+          force-push: 'true'
+          commit-message: 'Update bin directory'
+          name: github-actions[bot]
+          email: github-actions[bot]@noreply.github.com
