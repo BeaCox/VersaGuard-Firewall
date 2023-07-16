@@ -1,9 +1,9 @@
 # VersaGuard-Firewall
 NIS3302信息安全科技创新课程大作业——基于内核模块的包过滤防火墙
 
-[![made-with-C](https://img.shields.io/badge/Made%20with-C-blue?logo=C)](https://www.cprogramming.com/)[![linux](https://img.shields.io/badge/Platform-linux-blue?logo=linux)](https://www.linux.org/)[![Built with GTK](https://img.shields.io/badge/Built%20with-GTK-blue?logo=gtk)](https://www.gtk.org/)
+[![made-with-C](https://img.shields.io/badge/Made%20with-C-blue?logo=C)](https://www.cprogramming.com/) [![linux](https://img.shields.io/badge/Platform-linux-blue?logo=linux)](https://www.linux.org/) [![Built with GTK](https://img.shields.io/badge/Built%20with-GTK-blue?logo=gtk)](https://www.gtk.org/)
 
-[![](https://custom-icon-badges.demolab.com/github/languages/code-size/BeaCox/VersaGuard-Firewall?logo=file-code&logoColor=white)](https://github.com/BeaCox/VersaGuard-Firewall)[![GitHub release](https://img.shields.io/github/release/BeaCox/VersaGuard-Firewall.svg)](https://GitHub.com/BeaCox/VersaGuard-Firewall/releases/)
+[![](https://custom-icon-badges.demolab.com/github/languages/code-size/BeaCox/VersaGuard-Firewall?logo=file-code&logoColor=white)](https://github.com/BeaCox/VersaGuard-Firewall) [![GitHub release](https://img.shields.io/github/release/BeaCox/VersaGuard-Firewall.svg)](https://GitHub.com/BeaCox/VersaGuard-Firewall/releases/)
 
 ## Usage
 
@@ -71,6 +71,10 @@ Features:
 + 规则按字段排序（GTK原生功能）
 + 日志输出框
 + 搜索日志（上下键切换搜索结果）
+
+```bash
+sudo ./VersaGuard-gui
+```
 
 ## Compile
 
