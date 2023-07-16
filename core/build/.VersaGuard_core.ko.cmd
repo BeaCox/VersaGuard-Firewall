@@ -1,0 +1,1 @@
+cmd_/home/g-aoi/桌面/workstation/工作站/kernel最终实现/VersaGuard_core.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o /home/g-aoi/桌面/workstation/工作站/kernel最终实现/VersaGuard_core.ko /home/g-aoi/桌面/workstation/工作站/kernel最终实现/VersaGuard_core.o /home/g-aoi/桌面/workstation/工作站/kernel最终实现/VersaGuard_core.mod.o;  true
