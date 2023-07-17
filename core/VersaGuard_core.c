@@ -26,6 +26,7 @@
 #define BUF_SIZE 5120          // 读取字符串的最大长度，应大于最大规则数*100
 #define MAX_RULES 50           // 最大规则数
 #define LOG_FILE "/var/log/VersaGuard.log"
+
 char buf[256];
 loff_t pos = 0;
 struct file *filep = NULL;
@@ -260,21 +261,22 @@ bool match_rule(const struct sk_buff *skb, const struct firewall_rule *rule)
     if (rule->protocol_type != 3 && pkt_protocol != rule->protocol_type)
         return false;
 
-    u32 sip_saddr,sip_daddr;
-    char str_saddr[16] ={};
-    char str_daddr[16] ={};
+    int rule_saddr,rule_daddr;
+    u32 sip_saddr = ntohl(iph->saddr);
+    u32 sip_daddr = ntohl(iph->daddr);
+    char src_ip[INET_ADDRSTRLEN], dst_ip[INET_ADDRSTRLEN];
+    snprintf(src_ip, sizeof(src_ip), "%u.%u.%u.%u", IPADDRESS(sip_saddr));
+    snprintf(dst_ip, sizeof(dst_ip), "%u.%u.%u.%u", IPADDRESS(sip_daddr));
 
     // 检查源IP地址
-    sip_saddr=ntohl(iph->saddr);
-    sprintf(str_saddr,"%u.%u.%u.%u",IPADDRESS(sip_saddr));
-    if (strcmp(rule->ip_saddr_rule, "?") != 0 && strcmp(str_saddr, rule->ip_saddr_rule) != 0){
+    rule_saddr=in_aton(rule->ip_saddr_rule);
+    if (strcmp(rule->ip_saddr_rule, "?") != 0 && rule_saddr!=iph->saddr){
         return false;
     }
 
     // 检查目标IP地址
-    sip_daddr=ntohl(iph->daddr);
-    sprintf(str_daddr,"%u.%u.%u.%u",IPADDRESS(sip_daddr));
-    if (strcmp(rule->ip_daddr_rule, "?") != 0 && strcmp(str_daddr, rule->ip_daddr_rule) != 0){
+    rule_daddr=in_aton(rule->ip_daddr_rule);
+    if (strcmp(rule->ip_daddr_rule, "?") != 0 && rule_daddr!=iph->daddr){
         return false;
     }
 
@@ -282,19 +284,29 @@ bool match_rule(const struct sk_buff *skb, const struct firewall_rule *rule)
     if (strcmp(rule->dev_rule, "?") != 0 && strcmp(skb->dev->name, rule->dev_rule) != 0)
         return false;
 
+    unsigned int d_src_port=-1;
+    unsigned int d_dst_port=-1;
+    unsigned int src_port=-1;
+    unsigned int dst_port=-1;
+    int warning_eater;
+
+
     // 检查源端口
     if (strcmp(rule->deny_src_port, "?") != 0)
     {
+        warning_eater=kstrtouint(rule->deny_src_port,10,&d_src_port);
         if (iph->protocol == IPPROTO_TCP)
         {
             struct tcphdr *tcp_header = tcp_hdr(skb);
-            if (ntohs(tcp_header->source) == *(unsigned short *)rule->deny_src_port)
-                return false;
+            src_port=ntohs(tcp_header->source);
+            if (ntohs(tcp_header->source) != d_src_port){
+                return false;}
         }
         else if (iph->protocol == IPPROTO_UDP)
         {
             struct udphdr *udp_header = udp_hdr(skb);
-            if (ntohs(udp_header->source) == *(unsigned short *)rule->deny_src_port)
+            src_port=ntohs(udp_header->source);
+            if (ntohs(udp_header->source) != d_src_port)
                 return false;
         }
     }
@@ -302,16 +314,19 @@ bool match_rule(const struct sk_buff *skb, const struct firewall_rule *rule)
     // 检查目标端口
     if (strcmp(rule->deny_dst_port, "?") != 0)
     {
+        warning_eater=kstrtouint(rule->deny_dst_port,10,&d_dst_port);
         if (iph->protocol == IPPROTO_TCP)
         {
             struct tcphdr *tcp_header = tcp_hdr(skb);
-            if (ntohs(tcp_header->dest) == *(unsigned short *)rule->deny_dst_port)
+            dst_port=ntohs(tcp_header->dest);
+            if (ntohs(tcp_header->dest) != d_dst_port)
                 return false;
         }
         else if (iph->protocol == IPPROTO_UDP)
         {
             struct udphdr *udp_header = udp_hdr(skb);
-            if (ntohs(udp_header->dest) == *(unsigned short *)rule->deny_dst_port)
+            dst_port=ntohs(udp_header->dest);
+            if (ntohs(udp_header->dest) != d_dst_port)
                 return false;
         }
     }
@@ -322,12 +337,12 @@ bool match_rule(const struct sk_buff *skb, const struct firewall_rule *rule)
     struct tm result;
     time64_to_tm(ts.tv_sec, 0, &result);
     char cur_time[20];
+    int carry = (result.tm_hour+8)/24;
     snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
-            result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
-            result.tm_hour, result.tm_min, result.tm_sec);
+            result.tm_year + 1900, result.tm_mon + 1, result.tm_mday+carry,
+            (result.tm_hour+8)%24, result.tm_min, result.tm_sec);
     if (!is_time_between(cur_time, rule->time_start_rule, rule->time_end_rule))
         return false;
-
     return true;
 }
 
@@ -371,9 +386,10 @@ static unsigned int nf_blockpkt_handler(void *priv, struct sk_buff *skb, const s
             struct tm result;
             time64_to_tm(ts.tv_sec, 0, &result);
             char cur_time[20];
+            int carry = (result.tm_hour+8)/24;
             snprintf(cur_time, sizeof(cur_time), "%04ld-%02d-%02d %02d:%02d:%02d",
-                     result.tm_year + 1900, result.tm_mon + 1, result.tm_mday,
-                     result.tm_hour+8, result.tm_min, result.tm_sec);
+                     result.tm_year + 1900, result.tm_mon + 1, result.tm_mday+carry,
+                     (result.tm_hour+8)%24, result.tm_min, result.tm_sec);
 
             char log_info[100];
 
@@ -383,31 +399,31 @@ static unsigned int nf_blockpkt_handler(void *priv, struct sk_buff *skb, const s
                        cur_time,
                        iph->protocol == IPPROTO_TCP ? "TCP" : "UDP",
                        skb->dev->name,
-                       src_ip,
-                       src_port,
                        dst_ip,
-                       dst_port);
+                       dst_port,
+                       src_ip,
+                       src_port);
                 snprintf(log_info,sizeof(log_info),"[%s] %s %s %s:%d blocked %s:%d\n",
                          cur_time,
                          iph->protocol == IPPROTO_TCP ? "TCP" : "UDP",
                          skb->dev->name,
-                         src_ip,
-                         src_port,
                          dst_ip,
-                         dst_port);
+                         dst_port,
+                         src_ip,
+                         src_port);
             }
             else
             {
                 printk(KERN_INFO "[%s] ICMP %s %s blocked %s\n",
                        cur_time,
                        skb->dev->name,
-                       src_ip,
-                       dst_ip);
+                       dst_ip,
+                       src_ip);
                 snprintf(log_info,sizeof(log_info),"[%s] ICMP %s %s blocked %s\n",
                          cur_time,
                          skb->dev->name,
-                         src_ip,
-                         dst_ip);
+                         dst_ip,
+                         src_ip);
             }
 
             up(&my_semaphore);
@@ -549,6 +565,3 @@ module_init(my_module_init);
 module_exit(my_module_exit);
 
 MODULE_LICENSE("GPL");
-
-
-
