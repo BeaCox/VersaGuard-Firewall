@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude
+CFLAGS = -Wall -Wextra -Iinclude $(shell pkg-config --cflags glib-2.0)
 
-LIBS = -lsqlite3
+LIBS = -lsqlite3 $(shell pkg-config --libs glib-2.0)
 
 SRCDIR = src
 OBJDIR = build
@@ -24,4 +24,3 @@ clean:
 	@rm -rf $(OBJDIR) $(BINDIR) $(EXEC)
 
 .PHONY: clean
-

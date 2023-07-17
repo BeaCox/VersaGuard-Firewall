@@ -2,18 +2,32 @@
 #include "cmd_mode.h"
 #include "interact_mode.h"
 #include "utils.h"
+#include <glib.h>
+#include <sqlite3.h>
 
+#define APP_DIR ".config/VersaGuard"
+#define APP_DB "rules.db"
 
 int main(int argc, char *argv[])
 {
     char *error_message = 0;
+    //构造地址
+    const char *homeDir = g_get_home_dir();
+    char dbDirPath[256];
+    snprintf(dbDirPath, sizeof(dbDirPath), "%s/%s", homeDir, APP_DIR);
+    if (!g_file_test(dbDirPath, G_FILE_TEST_IS_DIR))
+    {
+        g_mkdir_with_parents(dbDirPath, 0755);
+    }
+    char dbPath[256];
+    snprintf(dbPath, sizeof(dbPath), "%s/%s/%s", homeDir, APP_DIR, APP_DB);
     // 检查数据库文件是否存在
-    int file_exists = access("rules.db", F_OK);
+    int file_exists = access(dbPath, F_OK);
     if (file_exists != 0) 
     {
         // 文件不存在，进行数据库的初始化和创建
         sqlite3 *db;
-        int result = sqlite3_open("rules.db", &db);
+        int result = sqlite3_open(dbPath, &db);
         if (result != SQLITE_OK) {
             fprintf(stderr, "\033[1;31m无法打开规则数据库: %s\033[0m\n", sqlite3_errmsg(db));
             return result;
@@ -46,7 +60,7 @@ int main(int argc, char *argv[])
 
     // 打开数据库连接
     sqlite3 *db;
-    int result = sqlite3_open("rules.db", &db);
+    int result = sqlite3_open(dbPath, &db);
     if (result != SQLITE_OK) {
         fprintf(stderr, "\033[1;31m无法打开规则数据库: %s\033[0m\n", sqlite3_errmsg(db));
         return result;

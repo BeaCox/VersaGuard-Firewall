@@ -43,6 +43,11 @@ void parseParam(int argc, char* argv[], sqlite3 *db)
             Rule rule = parseRuleParam(argv + 3);
             if (addRule(db, &rule)) {
         	    printf("\033[1;32m规则添加成功！\033[0m\n");
+                if (writeRulesToDevice(db)) {
+                    printf("\033[1;32m规则已成功写入设备文件/dev/firewall。\033[0m\n");
+                } else {
+                    printf("\033[1;31m规则写入设备文件失败。\033[0m\n");
+                }
     		} else {
         	    printf("\033[1;31m规则添加失败。\033[0m\n");
     		}
@@ -56,6 +61,11 @@ void parseParam(int argc, char* argv[], sqlite3 *db)
             }
             else if(deleteRule(db, ruleId)){
                 printf("\033[1;32m规则删除成功！\033[0m\n");
+                if (writeRulesToDevice(db)) {
+                    printf("\033[1;32m规则已成功写入设备文件/dev/firewall。\033[0m\n");
+                } else {
+                    printf("\033[1;31m规则写入设备文件失败。\033[0m\n");
+                }
     		} else {
         	    printf("\033[1;31m规则删除失败。\033[0m\n");
             }
@@ -157,6 +167,11 @@ void parseParam(int argc, char* argv[], sqlite3 *db)
 
             if(updateRule(db, ruleId, &ruleToUpdate)){
                 printf("\033[1;32m规则更新成功！\033[0m\n");
+                if (writeRulesToDevice(db)) {
+                    printf("\033[1;32m规则已成功写入设备文件/dev/firewall。\033[0m\n");
+                } else {
+                    printf("\033[1;31m规则写入设备文件失败。\033[0m\n");
+                }
     		} else {
         	    printf("\033[1;31m规则更新失败。\033[0m\n");
             }

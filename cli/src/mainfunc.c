@@ -314,6 +314,11 @@ bool writeRulesToDevice(sqlite3* db)
         sqlite3_finalize(statement);
         return false;
     }
+
+    // 创建一个缓冲区用于存储所有规则数据
+    char rulesBuffer[8192]="";
+    size_t bufferLength = 0;
+
     while (sqlite3_step(statement) == SQLITE_ROW) 
     {
         const char* protocol = (const char*)sqlite3_column_text(statement, 1);
@@ -327,7 +332,7 @@ bool writeRulesToDevice(sqlite3* db)
         int action = sqlite3_column_int(statement, 9);
 
         // 跳过不拦截的规则
-        if(action == 1){continue;}
+        if(action == 0){continue;}
 
          // 为空时写入?
         interface = (strcmp(interface, "") != 0) ? interface : "?";
@@ -339,18 +344,30 @@ bool writeRulesToDevice(sqlite3* db)
         end_time = (strcmp(end_time, "") != 0) ? end_time : "?";
 
 
-        // 将规则转换为字符串格式并写入设备文件
-        char rule[512];
-        snprintf(rule, sizeof(rule), "%s %s %s %s %s %s %s %s \n", protocol, interface, src_ip, dst_ip,
-                 src_port, dst_port, start_time, end_time);
-
-        ssize_t bytes_written = write(fd, rule, strlen(rule));
-        if (bytes_written < 0) 
+        // 将规则格式化后拼接到缓冲区中
+        int written = snprintf(rulesBuffer + bufferLength, sizeof(rulesBuffer) - bufferLength, "%s %s %s %s %s %s %s %s;", protocol, interface, src_ip, dst_ip, src_port, dst_port, start_time, end_time);
+        if (written < 0 || written >= (int)(sizeof(rulesBuffer) - bufferLength)) 
         {
+            printf("\033[1;31m规则数据过长，无法写入缓冲区。\033[0m\n");
             close(fd);
             sqlite3_finalize(statement);
             return false;
         }
+        
+        bufferLength += written;
+    }
+
+    // 将缓冲区中的规则数据一次性写入设备文件
+    ssize_t bytes_written = write(fd, rulesBuffer, bufferLength);
+    if(bufferLength == 0){
+        write(fd, rulesBuffer, bufferLength+1);
+    }
+    if (bytes_written < 0) 
+    {
+        printf("\033[1;31m写入设备文件失败。\033[0m\n");
+        close(fd);
+        sqlite3_finalize(statement);
+        return false;
     }
 
     // 关闭设备文件
