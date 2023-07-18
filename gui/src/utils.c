@@ -138,7 +138,7 @@ gboolean checkPermission()
 // 检查内核模块是否加载
 gboolean checkModule()
 {
-    // 执行lsmod | grep命令，检查是否加载了VersaGuard_ker模块
+    // 执行lsmod | grep命令，检查是否加载了VersaGuard_core模块
     char command[256];
     sprintf(command, "lsmod | grep %s", MODULE_NAME);
 
@@ -154,7 +154,7 @@ gboolean checkModule()
         pclose(lsmodOutput);
     }
 
-    // 检查当前目录下是否有VersaGuard_ker.ko文件
+    // 检查当前目录下是否有VersaGuard_core.ko文件
     // MODULE_NAME.ko为内核模块的文件名
     if (access(MODULE_NAME ".ko", F_OK) == 0){
         system("insmod " MODULE_NAME ".ko"); // 加载内核模块

@@ -1,6 +1,8 @@
 #include "logs.h"
 
 static off_t size = 0; // 记录文件大小
+// 全局变量，用于保存搜索结果的位置信息
+GtkTextIter search_start, search_end;
 
 // 监视日志文件的回调函数，当文件变化时调用
 
@@ -129,8 +131,6 @@ void createLogLink()
     }
 }
 
-// 全局变量，用于保存搜索结果的位置信息
-GtkTextIter search_start, search_end;
 
 // 回调函数：搜索文本发生变化时的处理
 void on_log_searchentry_search_changed(GtkSearchEntry *search_entry, gpointer user_data)
