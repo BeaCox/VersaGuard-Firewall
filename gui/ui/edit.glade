@@ -7,10 +7,13 @@
     <property name="height-request">700</property>
     <property name="can-focus">False</property>
     <property name="hexpand">True</property>
+    <property name="title" translatable="yes">VersaGuard</property>
+    <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="window-position">center</property>
     <property name="destroy-with-parent">True</property>
     <property name="type-hint">normal</property>
+    <property name="skip-taskbar-hint">True</property>
     <signal name="key-press-event" handler="on_edit_dialog_key_press_event" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkBox" id="box_edit">
